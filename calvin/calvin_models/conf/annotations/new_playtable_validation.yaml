@@ -1,0 +1,55 @@
+# rotation
+rotate_red_block_right: ["rotate the red block 60 degrees to the right"]
+rotate_red_block_left: ["rotate the red block 60 degrees to the left"]
+rotate_blue_block_right: ["rotate the blue block 60 degrees to the right"]
+rotate_blue_block_left: ["rotate the blue block 60 degrees to the left"]
+rotate_pink_block_right: ["rotate the pink block 60 degrees to the right"]
+rotate_pink_block_left: ["rotate the pink block 60 degrees to the left"]
+
+# sliding
+#push_red_block_right: ["push the red block towards the right"]
+#push_red_block_left: ["push the red block towards the left"]
+#push_blue_block_right: ["push the blue block towards the right"]
+#push_blue_block_left: ["push the blue block towards the left"]
+#push_pink_block_right: ["push the pink block towards the right"]
+#push_pink_block_left: ["push the pink block towards the left"]
+
+# open/close
+move_slider_left: [ "move the sliding door to the left"]
+move_slider_right: [ "move the sliding door to the right"]
+open_drawer: ["open the drawer"]
+close_drawer: ["close the drawer"]
+
+# lifting
+lift_red_block_table: ["lift the red block from the table"]
+lift_blue_block_table: ["lift the blue block from the table"]
+lift_pink_block_table: ["lift the pink block from the table"]
+
+lift_red_block_slider: [ "lift the red block from the sliding cabinet"]
+lift_blue_block_slider: [ "lift the blue block from the sliding cabinet"]
+lift_pink_block_slider: [ "lift the pink block from the sliding cabinet"]
+
+lift_red_block_drawer: ["lift the red block from the drawer"]
+lift_blue_block_drawer: ["lift the blue block from the drawer"]
+lift_pink_block_drawer: ["lift the pink block from the drawer"]
+
+#place_in_slider: [ "store the grasped block in the sliding cabinet"]
+#place_in_drawer: [ "store the grasped block in the drawer"]
+
+place_red_block_in_slider: ["place the red block in the sliding cabinet"]
+place_blue_block_in_slider: ["place the blue block in the sliding cabinet"]
+place_pink_block_in_slider: ['place the pink block in the sliding cabinet']
+
+place_red_block_in_drawer: ["place the red block in the drawer"]
+place_blue_block_in_drawer: ["place the blue block in the drawer"]
+place_pink_block_in_drawer: ["place the pink block in the drawer"]
+
+#push_into_drawer: ["slide the block that it falls into the drawer"]
+
+stack_block: ["stack blocks on top of each other"]
+unstack_block: ["remove the stacked block"]
+
+#turn_on_lightbulb: ["use the switch to turn on the light bulb"]
+#turn_off_lightbulb: ["use the switch to turn off the light bulb"]
+#turn_on_led: ["press the button to turn on the led light"]
+#turn_off_led: ["press the button to turn off the led light"]

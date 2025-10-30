@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: dlimp
+Version: 0.0.1
+Requires-Python: >=3.8
+Requires-Dist: tensorflow==2.15.1
+Requires-Dist: tensorflow_datasets>=4.9.2
+Provides-Extra: convert
+Requires-Dist: tqdm; extra == "convert"
+Requires-Dist: tqdm-multiprocess==0.0.11; extra == "convert"
+Provides-Extra: dev
+Requires-Dist: pre-commit==3.3.3; extra == "dev"
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python

@@ -1,0 +1,92 @@
+_target_: calvin_env.envs.low_level_tasks.LowLevelTasks
+tasks:
+    grasp_red_block: [grasp_block, 'block_red']
+    grasp_blue_block: [grasp_block, 'block_blue']
+    grasp_pink_block: [grasp_block, 'block_pink']
+    grasp_slider: [grasp_slider]
+    grasp_drawer: [grasp_drawer]
+    ungrasp_block: [ungrasp_block, ['block_red', 'block_blue', 'block_pink']]
+    ungrasp_slider: [ungrasp_slider]
+    ungrasp_drawer: [ungrasp_drawer]
+
+    #contact_red_block_left: [contact_block, 'block_red', 'left']
+    #contact_blue_block_left: [contact_block, 'block_blue', 'left']
+    #contact_pink_block_left: [contact_block, 'block_pink', 'left']
+    #contact_red_block_right: [contact_block, 'block_red', 'right']
+    #contact_blue_block_right: [contact_block, 'block_blue', 'right']
+    #contact_pink_block_right: [contact_block, 'block_pink', 'right']
+
+    # Gripper placement
+    place_grasped_block_over_table: [place_grasped_block_over_surface, 'table_link']
+    place_grasped_block_over_drawer: [place_grasped_block_over_surface, 'drawer_link']
+    place_grasped_block_over_slider: [place_grasped_block_over_surface, 'plank_link']
+    place_grasped_block_over_red_block: [place_grasped_block_over_block, 'block_red']
+    place_grasped_block_over_blue_block: [place_grasped_block_over_block, 'block_blue']
+    place_grasped_block_over_pink_block: [place_grasped_block_over_block, 'block_pink']
+
+    # rotation
+    rotate_grasped_block_right: [rotate_object, ['block_red', 'block_blue', 'block_pink'], -60]
+    rotate_grasped_block_left: [rotate_object, ['block_red', 'block_blue', 'block_pink'], 60]
+
+    # pushing
+    #push_block_right: [ push_object, 0.1, 0]
+    #push_block_left: [ push_object, -0.1, 0]
+
+    # open/close (slider, drawer) -> grasp slider/drawer + 
+    move_slider_left: [move_door_rel, 'base__slide', 0.15]  # 0 - 0.56
+    move_slider_right: [move_door_rel, 'base__slide', -0.15]
+    open_drawer: [move_door_rel, 'base__drawer', 0.12]  # 0 - 0.24
+    close_drawer: [move_door_rel, 'base__drawer', -0.12]
+
+    # lifting
+    lift_grasped_block: [lift_grasped_object, ['table', 'block_red', 'block_blue', 'block_pink']]
+
+    # lights
+    #turn_on_lightbulb: [toggle_light, 'lightbulb', 0, 1]
+    #turn_off_lightbulb: [toggle_light, 'lightbulb', 1, 0]
+    #turn_on_led: [ toggle_light, 'led', 0, 1 ]
+    #turn_off_led: [ toggle_light, 'led', 1, 0 ]
+
+    # pushing into drawer
+    #push_into_drawer: [push_object_into, ['block_red', 'block_blue', 'block_pink'], 'table', 'base_link', 'table', 'drawer_link']
+
+admissible_constraints:
+    grasp_red_block: []
+    grasp_blue_block: []
+    grasp_pink_block: []
+
+    grasp_slider: []
+    grasp_drawer: []
+
+    ungrasp_block: []
+    ungrasp_slider: []
+    ungrasp_drawer: []
+
+    #contact_red_block_left: []
+    #contact_blue_block_left: []
+    #contact_pink_block_left: []
+    #contact_red_block_right: []
+    #contact_blue_block_right: []
+    #contact_pink_block_right: []
+
+    place_grasped_block_over_table: [lift_grasped_block, place_grasped_block_over_red_block, place_grasped_block_over_blue_block, place_grasped_block_over_pink_block]
+    place_grasped_block_over_drawer: [lift_grasped_block, place_grasped_block_over_table, place_grasped_block_over_red_block, place_grasped_block_over_blue_block, place_grasped_block_over_pink_block]
+    place_grasped_block_over_slider: [lift_grasped_block, place_grasped_block_over_table, place_grasped_block_over_red_block, place_grasped_block_over_blue_block, place_grasped_block_over_pink_block]
+    place_grasped_block_over_red_block: [lift_grasped_block, place_grasped_block_over_table, place_grasped_block_over_drawer, place_grasped_block_over_slider, place_grasped_block_over_blue_block, place_grasped_block_over_pink_block]
+    place_grasped_block_over_blue_block: [lift_grasped_block, place_grasped_block_over_table, place_grasped_block_over_drawer, place_grasped_block_over_slider, place_grasped_block_over_red_block, place_grasped_block_over_pink_block]
+    place_grasped_block_over_pink_block: [lift_grasped_block, place_grasped_block_over_table, place_grasped_block_over_drawer, place_grasped_block_over_slider, place_grasped_block_over_blue_block, place_grasped_block_over_red_block]
+
+    rotate_grasped_block_right: [lift_grasped_block]
+    rotate_grasped_block_left: [lift_grasped_block]
+
+    push_block_right: []
+    push_block_left: []
+
+    move_slider_left: []
+    move_slider_right: []
+
+    open_drawer: [grasp_drawer, ungrasp_drawer] 
+    close_drawer: [grasp_drawer, ungrasp_drawer]
+
+    lift_grasped_block: []
+

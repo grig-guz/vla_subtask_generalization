@@ -1,0 +1,20 @@
+turn_on_lights: ["turn on both the led light and the light bulb"]
+turn_off_lights: ["turn off both the led light and the light bulb"]
+
+place_red_cube_into_table: ["Take the red block and put it on the table"]
+place_blue_cube_into_table: ["Take the blue block and put it on the table"]
+place_pink_cube_into_table: ["Take the pink block and put it on the table"]
+
+place_red_cube_into_drawer: ["Take the red block and store it in the drawer"]
+place_blue_cube_into_drawer: ["Take the blue block and store it in the drawer"]
+place_pink_cube_into_drawer: ["Take the pink block and store it in the drawer"]
+
+place_red_cube_into_slider: ["Take the red block and store it in the sliding cabinet"]
+place_blue_cube_into_slider: ["Take the blue block and store it in the sliding cabinet"]
+place_pink_cube_into_slider: ["Take the pink block and store it in the sliding cabinet"]
+
+# placing into closed drawer
+#place_red_cube_into_closed_drawer: ["pull the handle to open the drawer and store the red block in the drawer"]
+#place_blue_cube_into_closed_drawer: ["pull the handle to open the drawer and store the blue block in the drawer"]
+#place_pink_cube_into_closed_drawer: ["pull the handle to open the drawer and store the pink block in the drawer"]
+

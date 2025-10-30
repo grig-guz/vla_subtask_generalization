@@ -1,0 +1,53 @@
+defaults:
+  - callbacks: default #default_low_level #default_low_level #default_high_level #default_low_level #default
+  - datamodule: default
+  - model: sbert
+  - loss: default
+  - training: default_training
+  - trainer: play_trainer
+  - logger: wandb
+  - annotations@train_instructions: new_playtable_validation #low_level_tasks_validation #low_level_tasks_validation #new_playtable_validation #low_level_tasks_validation # high_level_tasks_validation #low_level_tasks_validation #new_playtable
+  - annotations@val_instructions: new_playtable_validation #low_level_tasks_validation #low_level_tasks_validation #new_playtable_validation #low_level_tasks_validation #high_level_tasks_validation #low_level_tasks_validation #new_playtable_validation
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+  - override datamodule/observation_space: state_only
+  - override datamodule/datasets: vision_only
+  #- override datamodule/datasets/vision_dataset: vision_shm
+  - _self_
+
+
+seed: 42
+log_dir: ../../
+slurm: false
+eps: 3 #0.00025 #0.00335 # #0.0004 #0.00035 #0.00015
+postprocessing: true
+root_data_dir: /scratch-ssd/gguz/task_D_D # /scratch-ssd/gguz/task_D_D
+lang_folder: lang_ann_128_norot #lang_annotations_low_level #lang_annotations_med_level #lang_annotations_low_level #lang_annotations_high_level
+with_text: false
+reannotate: false
+prior_steps_window: 16
+validation_scene: calvin_scene_D
+datamodule:
+  datasets:
+    vision_dataset:
+      min_window_size: 128
+      max_window_size: 128
+  shuffle_val: true
+
+hydra:
+  run:
+    dir: ${log_dir}/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}_lang_ann
+  sweep:
+    dir: ${log_dir}/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}_lang_ann
+  job:
+    config:
+      override_dirname:
+        exclude_keys:
+          - log_dir
+          - datamodule.root_data_dir
+          - trainer.gpus
+          - model.tsne_plot
+          - datamodule.num_workers
+          - trainer.limit_train_batches
+          - trainer.limit_val_batches
+          - model.action_decoder.load_action_bounds

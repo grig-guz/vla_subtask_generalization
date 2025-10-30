@@ -1,0 +1,17 @@
+networkx==2.8.4
+hydra-core==1.1.1
+matplotlib==3.9
+moviepy==1.0.3
+numpy==1.24.4
+gym
+cloudpickle
+gitpython
+hydra-colorlog
+numba
+numpy-quaternion
+omegaconf
+opencv-python
+pandas
+pybullet
+scipy
+rich

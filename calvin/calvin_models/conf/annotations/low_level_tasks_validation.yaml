@@ -1,0 +1,55 @@
+  # Grasping and contact
+  grasp_red_block: ['grasp the red block']
+  grasp_blue_block: ['grasp the blue block']
+  grasp_pink_block: ['grasp the pink block']
+  grasp_slider: ['grasp the handle of the sliding door']
+  grasp_drawer: ['grasp the handle of the drawer']
+  ungrasp_block: ['ungrasp the block']
+  ungrasp_slider: ['ungrasp the handle of the sliding door']
+  ungrasp_drawer: ['ungrasp the handle of the drawer']
+
+  #contact_red_block_left: ['touch the red block on its left side']
+  #contact_blue_block_left: ['touch the blue block on its left side']
+  #contact_pink_block_left: ['touch the pink block on its left side']
+  #contact_red_block_right: ['touch the red block on its right side']
+  #contact_blue_block_right: ['touch the blue block on its right side']
+  #contact_pink_block_right: ['touch the pink block on its right side']
+  #contact_red_block_behind: ['touch the red block behind it']
+  #contact_blue_block_behind: ['touch the blue block behind it']
+  #contact_pink_block_behind: ['touch the pink block behind it']
+
+  # Gripper placement
+  place_grasped_block_over_red_block: ['place the grasped block over the red block']
+  place_grasped_block_over_blue_block: ['place the grasped block over the blue block']
+  place_grasped_block_over_pink_block: ['place the grasped block over the pink block']
+
+  place_grasped_block_over_drawer: ['place the grasped block over the drawer']
+  place_grasped_block_over_slider: ['place the grasped block over the sliding cabinet']
+  place_grasped_block_over_table: ['place the grasped block over the table surface']
+
+  # rotation
+  rotate_grasped_block_right: ["rotate the grasped block 60 degrees to the right"]
+  rotate_grasped_block_left: ["rotate the grasped block 60 degrees to the left"]
+
+  # pushing
+  #push_block_right: ["push the touched block towards the right"]
+  #push_block_left: ["push the touched block towards the left"]
+
+  # open/close (slider, drawer) -> grasp slider/drawer + 
+  move_slider_left: [ "move the grasped handle towards the left"]
+  move_slider_right: [ "move the grasped handle towards the right"]
+
+  open_drawer: ["pull the drawer out"]
+  close_drawer: ["push the drawer in"]
+
+  # lifting
+  lift_grasped_block: ["lift the grasped block"]
+
+  # lights
+  #turn_on_lightbulb: ["use the switch to turn on the light bulb"]
+  #turn_off_lightbulb: ["use the switch to turn off the light bulb"]
+  #turn_on_led: ["press the button to turn on the led light"]
+  #turn_off_led: ["press the button to turn off the led light"]
+
+  # pushing into drawer
+  #push_into_drawer: ["slide the block that it falls into the drawer"]

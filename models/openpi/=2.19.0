@@ -1,0 +1,67 @@
+Collecting datasets
+  Using cached datasets-3.4.1-py3-none-any.whl.metadata (19 kB)
+Requirement already satisfied: filelock in /h/gguz/anaconda3/lib/python3.11/site-packages (from datasets) (3.13.1)
+Requirement already satisfied: numpy>=1.17 in /h/gguz/anaconda3/lib/python3.11/site-packages (from datasets) (1.26.4)
+Collecting pyarrow>=15.0.0 (from datasets)
+  Downloading pyarrow-19.0.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.3 kB)
+Requirement already satisfied: dill<0.3.9,>=0.3.0 in /h/gguz/anaconda3/lib/python3.11/site-packages (from datasets) (0.3.7)
+Requirement already satisfied: pandas in /h/gguz/anaconda3/lib/python3.11/site-packages (from datasets) (2.1.4)
+Collecting requests>=2.32.2 (from datasets)
+  Using cached requests-2.32.3-py3-none-any.whl.metadata (4.6 kB)
+Collecting tqdm>=4.66.3 (from datasets)
+  Using cached tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting xxhash (from datasets)
+  Downloading xxhash-3.5.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (12 kB)
+Collecting multiprocess<0.70.17 (from datasets)
+  Downloading multiprocess-0.70.16-py311-none-any.whl.metadata (7.2 kB)
+Requirement already satisfied: fsspec<=2024.12.0,>=2023.1.0 in /h/gguz/anaconda3/lib/python3.11/site-packages (from fsspec[http]<=2024.12.0,>=2023.1.0->datasets) (2023.10.0)
+Requirement already satisfied: aiohttp in /h/gguz/anaconda3/lib/python3.11/site-packages (from datasets) (3.9.3)
+Collecting huggingface-hub>=0.24.0 (from datasets)
+  Using cached huggingface_hub-0.29.3-py3-none-any.whl.metadata (13 kB)
+Requirement already satisfied: packaging in /h/gguz/anaconda3/lib/python3.11/site-packages (from datasets) (23.1)
+Requirement already satisfied: pyyaml>=5.1 in /h/gguz/anaconda3/lib/python3.11/site-packages (from datasets) (6.0.1)
+Requirement already satisfied: aiosignal>=1.1.2 in /h/gguz/anaconda3/lib/python3.11/site-packages (from aiohttp->datasets) (1.2.0)
+Requirement already satisfied: attrs>=17.3.0 in /h/gguz/anaconda3/lib/python3.11/site-packages (from aiohttp->datasets) (23.1.0)
+Requirement already satisfied: frozenlist>=1.1.1 in /h/gguz/anaconda3/lib/python3.11/site-packages (from aiohttp->datasets) (1.4.0)
+Requirement already satisfied: multidict<7.0,>=4.5 in /h/gguz/anaconda3/lib/python3.11/site-packages (from aiohttp->datasets) (6.0.4)
+Requirement already satisfied: yarl<2.0,>=1.0 in /h/gguz/anaconda3/lib/python3.11/site-packages (from aiohttp->datasets) (1.9.3)
+Requirement already satisfied: typing-extensions>=3.7.4.3 in /h/gguz/anaconda3/lib/python3.11/site-packages (from huggingface-hub>=0.24.0->datasets) (4.9.0)
+Collecting dill<0.3.9,>=0.3.0 (from datasets)
+  Using cached dill-0.3.8-py3-none-any.whl.metadata (10 kB)
+Requirement already satisfied: charset-normalizer<4,>=2 in /h/gguz/anaconda3/lib/python3.11/site-packages (from requests>=2.32.2->datasets) (2.0.4)
+Requirement already satisfied: idna<4,>=2.5 in /h/gguz/anaconda3/lib/python3.11/site-packages (from requests>=2.32.2->datasets) (3.4)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /h/gguz/anaconda3/lib/python3.11/site-packages (from requests>=2.32.2->datasets) (2.0.7)
+Requirement already satisfied: certifi>=2017.4.17 in /h/gguz/anaconda3/lib/python3.11/site-packages (from requests>=2.32.2->datasets) (2024.2.2)
+Requirement already satisfied: python-dateutil>=2.8.2 in /h/gguz/anaconda3/lib/python3.11/site-packages (from pandas->datasets) (2.8.2)
+Requirement already satisfied: pytz>=2020.1 in /h/gguz/anaconda3/lib/python3.11/site-packages (from pandas->datasets) (2023.3.post1)
+Requirement already satisfied: tzdata>=2022.1 in /h/gguz/anaconda3/lib/python3.11/site-packages (from pandas->datasets) (2023.3)
+Requirement already satisfied: six>=1.5 in /h/gguz/anaconda3/lib/python3.11/site-packages (from python-dateutil>=2.8.2->pandas->datasets) (1.16.0)
+Using cached datasets-3.4.1-py3-none-any.whl (487 kB)
+Using cached huggingface_hub-0.29.3-py3-none-any.whl (468 kB)
+Downloading multiprocess-0.70.16-py311-none-any.whl (143 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 143.5/143.5 kB 1.1 MB/s eta 0:00:00
+Using cached dill-0.3.8-py3-none-any.whl (116 kB)
+Downloading pyarrow-19.0.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (42.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 42.2/42.2 MB 81.0 MB/s eta 0:00:00
+Using cached requests-2.32.3-py3-none-any.whl (64 kB)
+Using cached tqdm-4.67.1-py3-none-any.whl (78 kB)
+Downloading xxhash-3.5.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (194 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 194.8/194.8 kB 6.8 MB/s eta 0:00:00
+Installing collected packages: xxhash, tqdm, requests, pyarrow, dill, multiprocess, huggingface-hub, datasets
+  Attempting uninstall: tqdm
+    Found existing installation: tqdm 4.65.0
+    Uninstalling tqdm-4.65.0:
+      Successfully uninstalled tqdm-4.65.0
+  Attempting uninstall: requests
+    Found existing installation: requests 2.31.0
+    Uninstalling requests-2.31.0:
+      Successfully uninstalled requests-2.31.0
+  Attempting uninstall: pyarrow
+    Found existing installation: pyarrow 14.0.2
+    Uninstalling pyarrow-14.0.2:
+      Successfully uninstalled pyarrow-14.0.2
+  Attempting uninstall: dill
+    Found existing installation: dill 0.3.7
+    Uninstalling dill-0.3.7:
+      Successfully uninstalled dill-0.3.7
+Successfully installed datasets-3.4.1 dill-0.3.8 huggingface-hub-0.29.3 multiprocess-0.70.16 pyarrow-19.0.1 requests-2.32.3 tqdm-4.67.1 xxhash-3.5.0

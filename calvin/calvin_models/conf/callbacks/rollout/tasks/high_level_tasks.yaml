@@ -1,0 +1,33 @@
+_target_: calvin_env.envs.high_level_tasks.HighLevelTasks
+tasks:
+
+  # lights
+  turn_on_lights: [ toggle_both_lights, 0, 1 ]
+  turn_off_lights: [ toggle_both_lights, 1, 0 ]
+
+  place_red_cube_into_table: [place_object, 'block_red', 'table', 'base_link']
+  place_blue_cube_into_table: [place_object, 'block_blue', 'table', 'base_link']
+  place_pink_cube_into_table: [place_object, 'block_pink', 'table', 'base_link']
+
+
+  place_red_cube_into_drawer: [place_object, 'block_red', 'table', 'drawer_link']
+  place_blue_cube_into_drawer: [place_object, 'block_blue', 'table', 'drawer_link']
+  place_pink_cube_into_drawer: [place_object, 'block_pink', 'table', 'drawer_link']
+
+  place_red_cube_into_slider: [place_object, 'block_red', 'table', 'plank_link']
+  place_blue_cube_into_slider: [place_object, 'block_blue', 'table', 'plank_link']
+  place_pink_cube_into_slider: [place_object, 'block_pink', 'table', 'plank_link']
+
+  # placing into closed drawer
+  #place_red_cube_into_closed_drawer: [place_object_into_closed_drawer, 'block_red', 'table', 'drawer_link']
+  #place_blue_cube_into_closed_drawer: [place_object_into_closed_drawer, 'block_blue', 'table', 'drawer_link']
+  #place_pink_cube_into_closed_drawer: [place_object_into_closed_drawer, 'block_pink', 'table', 'drawer_link']
+
+# signatures of available base tasks:
+# rotate_object(obj_name, degrees, x_y_threshold=30, z_treshold=180):
+# push_object(obj_name, x_direction, y_direction):
+# lift_object(obj_name, z_direction, surface_body=None, surface_link=None):
+# place_object(dest_body, dest_link=None):
+# push_object_into(obj_name, src_body, dest_body):
+# move_door_abs(start_info, end_info, obj_name, joint_name, start_threshold, end_threshold):
+# move_door_rel(obj_name, joint_name, threshold):
