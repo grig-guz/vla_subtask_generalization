@@ -11,9 +11,8 @@
 </div>
 
 ## General installation recommendations
-Note: we are currently refactoring the code, so runtime bugs are to be expected with the current version. This will be resolved in the coming weeks. 
 
-As [Octo](https://github.com/octo-models/octo), [Pi0-FAST](https://github.com/Physical-Intelligence/openpi) and [CogAct](https://github.com/microsoft/CogACT) differ in required dependency versions, we recommend installing each in a separate environment. For each VLA, we used the Python package managers recommended by the autors - conda (with Python 3.10) for Octo and CogACT and uv for Pi0-FAST. 
+As [Octo](https://github.com/octo-models/octo), [Pi0-FAST](https://github.com/Physical-Intelligence/openpi) and [CogAct](https://github.com/microsoft/CogACT) differ in required dependency versions, we recommend installing each in a separate  ```uv``` environment. 
 
 
 ## Datasets
@@ -28,7 +27,6 @@ repo_name/
 
 ## VLAs installation
 #### Octo installation
-We used uv as the package manager:
 ```
 cd models/octo
 uv venv .venv --python 3.10
@@ -74,7 +72,7 @@ uv pip install "flash-attn==2.5.5" --no-build-isolation
 
 cd ../../
 cd utils/dlimp
-pip install -e .
+uv pip install -e .
 ```
 
 ## CALVIN and LIBERO installation
