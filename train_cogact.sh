@@ -10,9 +10,9 @@ DATA_ROOT_DIR="."
 
 
 # NOTE: The code automatically selects the appropriate number for gradient accumulation steps based on the values below.
-GLOBAL_BATCH_SIZE=128
+GLOBAL_BATCH_SIZE=32
 PER_DEVICE_BATCH_SIZE=16
-NUM_GPUS=4
+NUM_GPUS=1
 
 COGACT_CHECKPOINT="CogACT/CogACT-Large"
 

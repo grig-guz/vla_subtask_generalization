@@ -388,76 +388,77 @@ def make_dataset_from_rlds(
     all_indices = np.arange(1350)
     num_trajs = np.random.choice(np.arange(270, 1350), size=1)[0]
     trajs = np.random.choice(all_indices, size=num_trajs, replace=False)
-    print("Selected trajs:", num_trajs)
-    low_task_categories = {
-        "grasp_red_block": "grasp_red_block",
-        "grasp_blue_block": "grasp_blue_block",
-        "grasp_pink_block": "grasp_pink_block",
-        "grasp_slider": "grasp_slider",
-        "grasp_drawer": "grasp_drawer",
-        "ungrasp_block": "ungrasp_block",
-        "ungrasp_slider": "ungrasp_slider",
-        "ungrasp_drawer": "ungrasp_drawer",
-        "place_grasped_block_over_red_block": "place_grasped_block_over_red_block",
-        "place_grasped_block_over_blue_block": "place_grasped_block_over_blue_block",
-        "place_grasped_block_over_pink_block": "place_grasped_block_over_pink_block",
-        "move_slider_left": "move_slider_left_low",
-        "move_slider_right": "move_slider_right_low",
-        "open_drawer": "open_drawer_low",
-        "close_drawer": "close_drawer_low",
-        "lift_grasped_block": "lift_grasped_block",
-        "rotate_grasped_block_right": "rotate_grasped_block_right",
-        "rotate_grasped_block_left": "rotate_grasped_block_left",
-        "place_grasped_block_over_drawer": "place_grasped_block_over_drawer",
-        "place_grasped_block_over_slider": "place_grasped_block_over_slider",
-        "place_grasped_block_over_table": "place_grasped_block_over_table",
-    }
-    high_task_categories = {
-        "rotate_red_block_right": "rotate_red_block_right",
-        "rotate_red_block_left": "rotate_red_block_left",
-        "rotate_blue_block_right": "rotate_blue_block_right",
-        "rotate_blue_block_left": "rotate_blue_block_left",
-        "rotate_pink_block_right": "rotate_pink_block_right",
-        "rotate_pink_block_left": "rotate_pink_block_left",
-        "move_slider_left": "move_slider_left_high",
-        "move_slider_right": "move_slider_right_high",
-        "open_drawer": "open_drawer_high",
-        "close_drawer": "close_drawer_high",
-        "place_red_block_in_slider": "place_red_block_in_slider",
-        "place_blue_block_in_slider": "place_blue_block_in_slider",
-        "place_pink_block_in_slider": "place_pink_block_in_slider",
-        "place_red_block_in_drawer": "place_red_block_in_drawer",
-        "place_blue_block_in_drawer": "place_blue_block_in_drawer",
-        "place_pink_block_in_drawer": "place_pink_block_in_drawer",
-        "stack_block": "stack_block",
-        "unstack_block": "unstack_block"
-    }
+    if do_subsampling:
+        print("Selected trajs:", num_trajs)
+        low_task_categories = {
+            "grasp_red_block": "grasp_red_block",
+            "grasp_blue_block": "grasp_blue_block",
+            "grasp_pink_block": "grasp_pink_block",
+            "grasp_slider": "grasp_slider",
+            "grasp_drawer": "grasp_drawer",
+            "ungrasp_block": "ungrasp_block",
+            "ungrasp_slider": "ungrasp_slider",
+            "ungrasp_drawer": "ungrasp_drawer",
+            "place_grasped_block_over_red_block": "place_grasped_block_over_red_block",
+            "place_grasped_block_over_blue_block": "place_grasped_block_over_blue_block",
+            "place_grasped_block_over_pink_block": "place_grasped_block_over_pink_block",
+            "move_slider_left": "move_slider_left_low",
+            "move_slider_right": "move_slider_right_low",
+            "open_drawer": "open_drawer_low",
+            "close_drawer": "close_drawer_low",
+            "lift_grasped_block": "lift_grasped_block",
+            "rotate_grasped_block_right": "rotate_grasped_block_right",
+            "rotate_grasped_block_left": "rotate_grasped_block_left",
+            "place_grasped_block_over_drawer": "place_grasped_block_over_drawer",
+            "place_grasped_block_over_slider": "place_grasped_block_over_slider",
+            "place_grasped_block_over_table": "place_grasped_block_over_table",
+        }
+        high_task_categories = {
+            "rotate_red_block_right": "rotate_red_block_right",
+            "rotate_red_block_left": "rotate_red_block_left",
+            "rotate_blue_block_right": "rotate_blue_block_right",
+            "rotate_blue_block_left": "rotate_blue_block_left",
+            "rotate_pink_block_right": "rotate_pink_block_right",
+            "rotate_pink_block_left": "rotate_pink_block_left",
+            "move_slider_left": "move_slider_left_high",
+            "move_slider_right": "move_slider_right_high",
+            "open_drawer": "open_drawer_high",
+            "close_drawer": "close_drawer_high",
+            "place_red_block_in_slider": "place_red_block_in_slider",
+            "place_blue_block_in_slider": "place_blue_block_in_slider",
+            "place_pink_block_in_slider": "place_pink_block_in_slider",
+            "place_red_block_in_drawer": "place_red_block_in_drawer",
+            "place_blue_block_in_drawer": "place_blue_block_in_drawer",
+            "place_pink_block_in_drawer": "place_pink_block_in_drawer",
+            "stack_block": "stack_block",
+            "unstack_block": "unstack_block"
+        }
 
-    ll_counts = {ll_task:0 for ll_task in low_task_categories.keys()}
-    hl_counts = {hl_task:0 for hl_task in high_task_categories.keys()}
-    
-    for i in trajs:
-        hl_task = ann_dict['language']['task'][i]
-        hl_counts[hl_task] += 1   
+        ll_counts = {ll_task:0 for ll_task in low_task_categories.keys()}
+        hl_counts = {hl_task:0 for hl_task in high_task_categories.keys()}
+        
+        for i in trajs:
+            hl_task = ann_dict['language']['task'][i]
+            hl_counts[hl_task] += 1   
 
-        selected = ann_dict['language']['subtasks_selected'][i]
-        for task_selected in selected:
-            ll_counts[task_selected] += 1
+            selected = ann_dict['language']['subtasks_selected'][i]
+            for task_selected in selected:
+                ll_counts[task_selected] += 1
 
 
-    a = {
-        'll_counts': ll_counts,
-        'hl_counts': hl_counts,
-        'traj_selected': trajs
-    }
+        a = {
+            'll_counts': ll_counts,
+            'hl_counts': hl_counts,
+            'traj_selected': trajs
+        }
 
-    if not os.path.exists(stats_save_dir):
-        os.makedirs(stats_save_dir)
+        if not os.path.exists(stats_save_dir):
+            os.makedirs(stats_save_dir)
 
-    with open(stats_save_dir + '/subset_stats.pkl', 'wb') as handle:
-        pickle.dump(a, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(stats_save_dir + '/subset_stats.pkl', 'wb') as handle:
+            pickle.dump(a, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    keep_ids = tf.constant(list(trajs))
+        keep_ids = tf.constant(list(trajs))
 
     def keep_episode(example, keep_ids):
         ep_name = example['traj_metadata']['episode_metadata']['file_path'][0]

@@ -28,17 +28,16 @@ repo_name/
 
 ## VLAs installation
 #### Octo installation
-We followed the recipe from [here](https://github.com/erikbr01/octo_experiments) as we experienced installations instructions Octo from the [original](https://github.com/octo-models/octo) repository:
+We used uv as the package manager:
 ```
-python -m pip install tensorflow[and-cuda]==2.14.0
-python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
-
-conda install cudnn=8.8 cuda-version=11.8
-pip install --upgrade "jax[cuda11_pip]==0.4.20" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-
 cd models/octo
-pip install -e .
-pip install -r requirements.txt
+uv venv .venv --python 3.10
+source .venv/bin/activate
+
+uv pip install -e .
+uv pip install -r requirements.txt
+uv pip install --upgrade "jax[cuda11_pip]==0.4.20" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+uv pip install --upgrade "nvidia-cudnn-cu11>=8.6,<9"
 ```
 
 #### Pi0-FAST installation
@@ -65,13 +64,17 @@ uv run scripts/compute_norm_stats.py --config-name calvin_low_level
 #### CogACT installation
 
 ```
+cd models/CogACT
+uv venv .venv --python 3.10
+source .venv/bin/activate
+uv pip install -r requirements.txt
+uv pip install -e .
+uv pip install packaging ninja
+uv pip install "flash-attn==2.5.5" --no-build-isolation
+
+cd ../../
 cd utils/dlimp
 pip install -e .
-cd ../../
-cd models/CogACT
-pip install -e .
-pip install packaging ninja
-pip install "flash-attn==2.5.5" --no-build-isolation
 ```
 
 ## CALVIN and LIBERO installation
@@ -79,11 +82,12 @@ The directories `calvin/` and `LIBERO/` contain the modified code for the corres
 
 ```
 cd calvin/calvin_env
-pip install -e .
+uv pip install -r requirements.txt
+uv pip install -e .
 cd ../../
 cd LIBERO
-pip install -r requirements.txt
-pip install -e .
+uv pip install -r requirements.txt
+uv pip install -e .
 ```
 
 
