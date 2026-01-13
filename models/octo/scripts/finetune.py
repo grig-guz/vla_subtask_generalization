@@ -1,4 +1,5 @@
 import os
+import tensorflow_probability
 
 import datetime
 from functools import partial
@@ -199,9 +200,11 @@ def main(_):
             wandb_id,
         )
 
-    ann_file_path = FLAGS.config.ann_file_path
-    ann_dict = np.load(ann_file_path, allow_pickle=True)[()]
-
+    if FLAGS.config.do_subsampling:
+        ann_file_path = FLAGS.config.ann_file_path
+        ann_dict = np.load(ann_file_path, allow_pickle=True)[()]
+    else:
+        ann_dict = None
     print("Do dataset subsampling? ", FLAGS.config.do_subsampling)
 
     dataset = make_single_dataset(
@@ -439,7 +442,7 @@ def main(_):
             train_state, update_info = train_step(train_state, batch)
 
         timer.tock("total")
-
+        print(timer.get_average_times())
         if (i + 1) % FLAGS.config.log_interval == 0:
             update_info = jax.device_get(update_info)
             
