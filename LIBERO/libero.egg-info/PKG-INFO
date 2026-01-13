@@ -1,19 +1,15 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: libero
 Version: 0.1.0
 Summary: LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning
+Home-page: UNKNOWN
 Author: Bo Liu, Yifeng Zhu, Chongkai Gao, Yihao Feng, Qiang Liu, Yuke Zhu, Peter Stone
 Author-email: bliu@cs.utexas.edu, yifengz@cs.utexas.edu
+License: UNKNOWN
+Platform: UNKNOWN
 Requires-Python: >=3
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Dynamic: author
-Dynamic: author-email
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: license-file
-Dynamic: requires-python
-Dynamic: summary
 
 <div align="center">
 
@@ -183,3 +179,5 @@ If you find **LIBERO** to be useful in your own research, please consider citing
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | Codebase         | [MIT License](LICENSE)                                                                                                                      |
 | Datasets         | [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/legalcode)                 |
+
+

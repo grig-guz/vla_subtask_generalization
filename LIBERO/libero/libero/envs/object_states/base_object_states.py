@@ -56,6 +56,11 @@ class ObjectState(BaseObjectState):
         object_2 = self.env.get_object(other.object_name)
         return self.env.check_contact(object_1, object_2)
 
+    def check_grasped(self):
+        object_1 = self.env.get_object(self.object_name)
+        gripper = self.env.robots[0].gripper
+        return self.env._check_grasp(gripper, object_1)
+
     def check_contain(self, other):
         object_1 = self.env.get_object(self.object_name)
         object_1_position = self.env.sim.data.body_xpos[
@@ -155,6 +160,19 @@ class SiteObjectState(BaseObjectState):
             self.env.sim.data.get_site_xmat(self.object_name)
         )
         return {"pos": object_pos, "quat": object_quat}
+    
+    def check_grasped(self):
+        gripper = self.env.robots[0].gripper
+
+        if 'top' in self.object_name:
+            body_id = self.env.sim.model.body_name2id('white_cabinet_1_cabinet_top')
+        else:
+            body_id = self.env.sim.model.body_name2id('white_cabinet_1_cabinet_bottom')
+        geom_ids = np.where(self.env.sim.model.geom_bodyid == body_id)[0]
+        geom_names = np.array([self.env.sim.model.geom_id2name(g_id) for g_id in geom_ids])
+        
+        #return self.env._check_grasp(gripper, geom_name)
+        return self.env.check_contact(gripper, geom_names)
 
     def check_contain(self, other):
         this_object = self.env.object_sites_dict[self.object_name]

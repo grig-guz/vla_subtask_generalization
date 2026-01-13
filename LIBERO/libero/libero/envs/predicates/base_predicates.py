@@ -80,6 +80,22 @@ class Up(BinaryAtomic):
     def __call__(self, arg1):
         return arg1.get_geom_state()["pos"][2] >= 1.0
 
+class Grasped(UnaryAtomic):
+    def __call__(self, arg1):
+        return arg1.check_grasped()
+
+class Ungrasped(UnaryAtomic):
+    def __call__(self, arg1):
+        return not arg1.check_grasped()
+
+
+class Over(BinaryAtomic):
+    def __call__(self, arg1, arg2):
+        return (
+            arg2.check_contain(arg1)
+            and arg1.get_geom_state()["pos"][2] > arg2.get_geom_state()["pos"][2]
+        )
+
 
 class Stack(BinaryAtomic):
     def __call__(self, arg1, arg2):

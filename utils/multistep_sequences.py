@@ -8,8 +8,7 @@ import logging
 from operator import add
 import numpy as np
 
-from utils.shared_utils import tasks, task_categories
-from utils.calvin_utils import temp_seed
+from utils.shared_utils import tasks, task_categories, temp_seed
 
 logger = logging.getLogger(__name__)
 

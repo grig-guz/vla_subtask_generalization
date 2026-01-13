@@ -6,7 +6,6 @@ from typing import Optional, Union
 from collections import  Counter
 from torchvision.transforms import Resize
 import torch
-from PIL import Image
 import hydra
 import draccus
 import numpy as np
@@ -21,9 +20,8 @@ from utils.rollout_video import RolloutVideo
 from utils.multistep_sequences import get_sequences
 from utils.multistep_sequences_low_level_random import get_low_level_random_sequences
 from utils.multistep_sequences_high2low_chain import get_sequences_high2low_chain
-from utils.shared_utils import resize_image, high_to_low_level_mappings, get_action, normalize_gripper_action, set_seed_everywhere
+from utils.shared_utils import resize_image, high_to_low_level_mappings, normalize_gripper_action, set_seed_everywhere
 
-import calvin_env
 from omegaconf import OmegaConf
 
 logger = logging.getLogger(__name__)
@@ -61,7 +59,6 @@ class GenerateConfig:
     wandb_entity: str = "YOUR_WANDB_ENTITY"          # Name of entity to log under
     seed: int = 7                                    # Random Seed (for reproducibility)
     # fmt: on
-
 
 def count_success(results):
     count = Counter(results)
@@ -205,81 +202,50 @@ def evaluate_sequence(
 
     success_counter = 0
     print("Evaluating sequence: ", eval_sequence)
-    if cfg.model == 'cogact':
-        model.reset()
 
-    if cfg.eval_type == 'conjunction':
-        lang_annotation = ", then ".join([annotations[subtask][0] for subtask in eval_sequence])
-        print("The instruction ", lang_annotation)
+    for subtask in eval_sequence:
+        if cfg.eval_type in ['train_conjunction', 'conj_random', 'conj_random_easy_eval']:
+            high_task, low_subtasks = subtask
+            lang_annotation = ", then ".join([annotations[low_subtask][0] for low_subtask in low_subtasks])
+            subtask = high_task
+        else:
+            lang_annotation = annotations[subtask][0]
+        print("Evaluating task ", subtask)
+        if counters is not None:
+            counters['low_level_started'][subtask] += 1
+
         if record:
             rollout_video.new_subtask()
 
         success = rollout(
-            task=high_level_task,
+            task=subtask,
             lang_annotation=lang_annotation,
             cfg=cfg,
             model=model,
-            processor=processor,
             env=env, 
             task_oracle=task_oracle,
             record=record, 
             rollout_video=rollout_video,
             counters=counters
         )
+
         if record:
             rollout_video.draw_outcome(success)
         if success:
+            if counters is not None:
+                counters['low_level_completed'][subtask] += 1
             success_counter += 1
         else:
             return success_counter
-    else:
-        for subtask in eval_sequence:
-            if cfg.eval_type in ['train_conjunction', 'conj_random', 'conj_random_easy_eval']:
-                high_task, low_subtasks = subtask
-                lang_annotation = ", then ".join([annotations[low_subtask][0] for low_subtask in low_subtasks])
-                subtask = high_task
-            else:
-                lang_annotation = annotations[subtask][0]
-            print("Evaluating task ", subtask)
-            if counters is not None:
-                counters['low_level_started'][subtask] += 1
-
-            if record:
-                rollout_video.new_subtask()
-
-            success = rollout(
-                task=subtask,
-                lang_annotation=lang_annotation,
-                cfg=cfg,
-                model=model,
-                processor=processor,
-                env=env, 
-                task_oracle=task_oracle,
-                record=record, 
-                rollout_video=rollout_video,
-                counters=counters
-            )
-
-            if record:
-                rollout_video.draw_outcome(success)
-            if success:
-                if counters is not None:
-                    counters['low_level_completed'][subtask] += 1
-                success_counter += 1
-            else:
-                return success_counter
         
     return success_counter
 
 
-def rollout(task, lang_annotation, cfg, model, processor, env, task_oracle, record=False, rollout_video=None, counters=None):
+def rollout(task, lang_annotation, cfg, model, env, task_oracle, record=False, rollout_video=None, counters=None):
 
     obs = env.get_obs()
-    use_angles = False
 
     if cfg.model == 'octo':
-        print(lang_annotation)
-        goal = model.create_tasks(texts=[lang_annotation])
         from octo.utils.train_callbacks import supply_rng
         policy_fn = supply_rng(
                 partial(
@@ -287,129 +253,31 @@ def rollout(task, lang_annotation, cfg, model, processor, env, task_oracle, reco
                     unnormalization_statistics=model.dataset_statistics["action"],
                 ),
             )
-        window_size = cfg.action_horizon
-        act_step = cfg.action_horizon
-    elif cfg.model == 'mdt':
-        goal = {}
-        goal['lang_text'] = lang_annotation
-        model.reset()
-        act_step = 0
-    elif cfg.model == 'rdt':
-        from preprocessing.create_rdt_datasets import get_robot_proprio
-
-        goal = model.encode_instruction(lang_annotation)
-        window_size = cfg.action_horizon
-        act_step = cfg.action_horizon
-        use_angles = True
+        goal = model.create_tasks(texts=[lang_annotation])
+        model = policy_fn
     elif cfg.model == 'cogact':
-        window_size = cfg.action_horizon
-        act_step = cfg.action_horizon
         model.reset()
-    elif cfg.model == 'pi0_fast':
-        window_size = cfg.action_horizon
-        act_step = cfg.action_horizon
+    window_size = cfg.action_horizon
+    act_step = cfg.action_horizon
 
     start_info = env.get_info()
     past_obs = None
+    action_buffer = None
     
     for step in range(cfg.ep_len):
-        if cfg.model == 'openvla':
-            observation = {
-                'full_image': resize_image(obs['rgb_obs']['rgb_static'], (224, 224))
-            }
-            action = get_action(
-                cfg,
-                model,
-                observation,
-                task_label=lang_annotation,
-                processor=processor,
-            )
-            action = normalize_gripper_action(action)
-        elif cfg.model == 'octo':
-            if act_step > 0 and act_step % window_size == 0:
-                act_step = 0
-                
-                static_2 = resize_image(obs['rgb_obs']['rgb_static'], (256, 256), primary=True)
-                gripper_2 = resize_image(obs['rgb_obs']['rgb_gripper'], (128, 128))
-                if past_obs:
-                    static_1 = resize_image(past_obs['rgb_obs']['rgb_static'], (256, 256), primary=True)
-                    gripper_1 = resize_image(past_obs['rgb_obs']['rgb_gripper'], (128, 128))
-                    image_primary = np.stack([static_1, static_2])
-                    image_wrist = np.stack([gripper_1, gripper_2])
-                    timestep_pad_mask = np.array([[True, True]])
-                else:
-                    image_primary = np.stack([np.zeros((256, 256, 3)), static_2])
-                    image_wrist = np.stack([np.zeros((128, 128, 3)), gripper_2])
-                    timestep_pad_mask = np.array([[False, True]])
-
-                pad_mask_dict = {
-                    "image_primary": np.array([[True, True]]),
-                    "timestep": np.array([[False, False]]),
-                }
-                
-                observation = {
-                        "image_primary": np.expand_dims(image_primary, 0),  # uint8
-                        "timestep_pad_mask": timestep_pad_mask,
-                        "pad_mask_dict": pad_mask_dict,
-                        "timestep": np.array([[step-1, step]]),
-                }
-                if 'wrist' in cfg.image_obs_keys:
-                    observation['image_wrist'] = np.expand_dims(image_wrist, 0)
-                    pad_mask_dict["image_wrist"] = np.array([[True, True]])
-
-                act_buffer = policy_fn(observation, goal)
-                act_buffer = np.array(act_buffer[0])
-                action = act_buffer[act_step]
-            else:
-                action = act_buffer[act_step]
-
-            action = normalize_gripper_action(action)
-        elif cfg.model == 'mdt':
-            action = model.step(obs, goal)
-        elif cfg.model == 'rdt':
-            if act_step > 0 and act_step % window_size == 0:
-                act_step = 0
-
-                image_inputs = []
-                if past_obs == None:
-                    image_inputs.extend([None, None, None])
-                else:
-                    image_inputs.extend([Image.fromarray(past_obs['rgb_obs']['rgb_static']), None, None])
-
-                image_inputs.extend([Image.fromarray(obs['rgb_obs']['rgb_static']), None, None])
-                proprio = get_robot_proprio(obs)
-                proprio = torch.tensor(proprio).unsqueeze(0)
-                actions = model.step(proprio, image_inputs, goal).squeeze()
-                action = actions[act_step]
-            else:
-                action = actions[act_step]
-            action = action.cpu().numpy()
-            action = normalize_gripper_action(action)
-        elif cfg.model == 'cogact':
-
-            if act_step > 0 and act_step % window_size == 0:
-                act_step = 0
-                image = obs['rgb_obs']['rgb_static']
-                action_buffer = model.step(image=image, task_description=lang_annotation)
-                action = np.array(action_buffer[act_step])
-                action = normalize_gripper_action(action)
-            else:
-                action = np.array(action_buffer[act_step])
-                action = normalize_gripper_action(action)
-        elif cfg.model == 'pi0_fast':
-            if act_step > 0 and act_step % window_size == 0:
-                act_step = 0
-                img = obs['rgb_obs']['rgb_static']
-                state = obs['robot_obs']
-                inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
-                act_buffer = model.infer(inputs)["actions"]
-                action = act_buffer[act_step]
-            else:
-                action = act_buffer[act_step]
-            action = normalize_gripper_action(action)
-        else:
-            raise Exception("Unknown model!")
         
+        action, action_buffer = get_action(
+            cfg=cfg,
+            model=model,
+            obs=obs,
+            past_obs=past_obs,
+            lang_annotation=lang_annotation,
+            goal=goal,
+            act_step=act_step,
+            action_buffer=action_buffer,
+            window_size=window_size,
+            step=step
+        )
         act_step += 1
         past_obs = obs
         obs, _, _, current_info = env.step(action)
@@ -441,11 +309,59 @@ def rollout(task, lang_annotation, cfg, model, processor, env, task_oracle, reco
             if len(current_task_info) > 0:
                 log_run_result(counters, task, lang_annotation, "success", record, rollout_video)
                 return True
-        
-
+            
     log_run_result(counters, task, lang_annotation, "timeout", record, rollout_video)
 
     return False
+
+def get_action(cfg, model, obs, past_obs, lang_annotation, goal, act_step, action_buffer, window_size, step):
+    if act_step > 0 and act_step % window_size == 0:
+        act_step = 0
+        if cfg.model == 'octo':
+                static_2 = resize_image(obs['rgb_obs']['rgb_static'], (256, 256), primary=True)
+                gripper_2 = resize_image(obs['rgb_obs']['rgb_gripper'], (128, 128))
+                if past_obs:
+                    static_1 = resize_image(past_obs['rgb_obs']['rgb_static'], (256, 256), primary=True)
+                    gripper_1 = resize_image(past_obs['rgb_obs']['rgb_gripper'], (128, 128))
+                    image_primary = np.stack([static_1, static_2])
+                    image_wrist = np.stack([gripper_1, gripper_2])
+                    timestep_pad_mask = np.array([[True, True]])
+                else:
+                    image_primary = np.stack([np.zeros((256, 256, 3)), static_2])
+                    image_wrist = np.stack([np.zeros((128, 128, 3)), gripper_2])
+                    timestep_pad_mask = np.array([[False, True]])
+
+                pad_mask_dict = {
+                    "image_primary": np.array([[True, True]]),
+                    "timestep": np.array([[False, False]]),
+                }
+                
+                observation = {
+                        "image_primary": np.expand_dims(image_primary, 0),  # uint8
+                        "timestep_pad_mask": timestep_pad_mask,
+                        "pad_mask_dict": pad_mask_dict,
+                        "timestep": np.array([[step-1, step]]),
+                }
+                if 'wrist' in cfg.image_obs_keys:
+                    observation['image_wrist'] = np.expand_dims(image_wrist, 0)
+                    pad_mask_dict["image_wrist"] = np.array([[True, True]])
+                
+                act_buffer = model(observation, goal)
+                act_buffer = np.array(act_buffer[0])
+        elif cfg.model == 'cogact':
+            image = obs['rgb_obs']['rgb_static']
+            action_buffer = model.step(image=image, task_description=lang_annotation)
+        elif cfg.model == 'pi0_fast':
+            img = obs['rgb_obs']['rgb_static']
+            state = obs['robot_obs']
+            inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
+            act_buffer = model.infer(inputs)["actions"]        
+        else:
+            raise Exception("Unknown model!")
+    
+    action = np.array(action_buffer[act_step])
+    action = normalize_gripper_action(action)
+    return action, action_buffer
 
 
 def log_run_result(counters, task, lang_annotation, result, record, rollout_video):

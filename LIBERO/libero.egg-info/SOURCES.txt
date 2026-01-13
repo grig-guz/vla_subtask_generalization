@@ -16,6 +16,7 @@ libero/libero/benchmark/mu_creation.py
 libero/libero/envs/__init__.py
 libero/libero/envs/base_object.py
 libero/libero/envs/bddl_base_domain.py
+libero/libero/envs/bddl_sequential_base_domain.py
 libero/libero/envs/bddl_utils.py
 libero/libero/envs/env_wrapper.py
 libero/libero/envs/textures.py
@@ -45,6 +46,7 @@ libero/libero/envs/problems/libero_coffee_table_manipulation.py
 libero/libero/envs/problems/libero_floor_manipulation.py
 libero/libero/envs/problems/libero_kitchen_tabletop_manipulation.py
 libero/libero/envs/problems/libero_living_room_tabletop_manipulation.py
+libero/libero/envs/problems/libero_sequential_kitchen_tabletop_manipulation.py
 libero/libero/envs/problems/libero_study_tabletop_manipulation.py
 libero/libero/envs/problems/libero_tabletop_manipulation.py
 libero/libero/envs/regions/__init__.py

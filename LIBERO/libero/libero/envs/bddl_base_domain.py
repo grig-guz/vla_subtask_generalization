@@ -31,9 +31,6 @@ def register_problem(target_class):
     TASK_MAPPING[target_class.__name__.lower()] = target_class
 
 
-import time
-
-
 class BDDLBaseDomain(SingleArmEnv):
     """
     A base domain for parsing bddl files.
@@ -77,7 +74,6 @@ class BDDLBaseDomain(SingleArmEnv):
         scene_properties={},
         **kwargs,
     ):
-        t0 = time.time()
         # settings for table top (hardcoded since it's not an essential part of the environment)
         self.workspace_offset = workspace_offset
         # reward configuration
@@ -123,10 +119,10 @@ class BDDLBaseDomain(SingleArmEnv):
 
         self.bddl_file_name = bddl_file_name
         self.parsed_problem = BDDLUtils.robosuite_parse_problem(self.bddl_file_name)
+        self._assert_problem_name()
 
         self.obj_of_interest = self.parsed_problem["obj_of_interest"]
 
-        self._assert_problem_name()
 
         self._arena_type = arena_type
         self._arena_xml = os.path.join(self.custom_asset_dir, scene_xml)

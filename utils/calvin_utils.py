@@ -23,7 +23,6 @@ from typing import Any, Dict, Tuple, Union
 import gym
 import numpy as np
 import torch
-import contextlib
 
 from calvin_env.envs.play_table_env import get_env
 from calvin_env.utils.utils import EglDeviceNotFoundError, get_egl_device_id
@@ -34,7 +33,46 @@ from collections import Counter
 logger = logging.getLogger(__name__)
 DEFAULT_TRANSFORM = OmegaConf.create({"train": None, "val": None})
 
-    
+
+def resize_image(img, resize_size, primary=True):
+    """
+    Takes numpy array corresponding to a single image and returns resized image as numpy array.
+
+    NOTE (Moo Jin): To make input images in distribution with respect to the inputs seen at training time, we follow
+                    the same resizing scheme used in the Octo dataloader, which OpenVLA uses for training.
+    """
+    assert isinstance(resize_size, tuple)
+    # Resize to image size expected by model
+    img = tf.image.encode_jpeg(img)  # Encode as JPEG, as done in RLDS dataset builder
+    img = tf.io.decode_image(img, expand_animations=False, dtype=tf.uint8)  # Immediately decode back
+    img = tf.image.resize(img, resize_size, method="lanczos3", antialias=True)
+
+    # If the primary camera image was shifted/scaled in Octo 
+    # (OpenVLA code already handles this)
+    if primary:
+        avg_scale = 0.9
+        avg_ratio = 1.0
+        new_height = tf.clip_by_value(tf.sqrt(avg_scale / avg_ratio), 0, 1)
+        new_width = tf.clip_by_value(tf.sqrt(avg_scale * avg_ratio), 0, 1)
+        height_offset = (1 - new_height) / 2
+        width_offset = (1 - new_width) / 2
+        bounding_box = tf.stack(
+            [
+                height_offset,
+                width_offset,
+                height_offset + new_height,
+                width_offset + new_width,
+            ],
+        )
+        img = tf.image.crop_and_resize(
+            img[None], bounding_box[None], [0], resize_size
+        )[0]
+
+        
+    img = tf.cast(tf.clip_by_value(tf.round(img), 0, 255), tf.uint8)
+    img = img.numpy()
+    return img
+
 
 def get_libero_env(task, resolution=256):
     from libero.libero.envs import OffScreenRenderEnv
@@ -48,17 +86,6 @@ def get_libero_env(task, resolution=256):
     env.seed(0)  # IMPORTANT: seed seems to affect object positions even when using fixed initial state
     return env, task_description
 
-
-def get_libero_dummy_action():
-    """Get dummy/no-op action, used to roll out the simulation while the robot does nothing."""
-    return [0, 0, 0, 0, 0, 0, -1]
-
-
-def get_libero_env_and_checkpoint(cfg):
-    model = None
-    processor = None
-    env = get_libero_env(cfg)
-    extra_cfg = None
 
 def get_env_and_checkpoint(cfg):
     env, calvin_cfg = get_calvin_env(
@@ -161,14 +188,6 @@ def load_cogact_checkpoint(pretrained_checkpoint, model_state_dict=None):
     )
     return policy, None
 
-@contextlib.contextmanager
-def temp_seed(seed):
-    state = np.random.get_state()
-    np.random.seed(seed)
-    try:
-        yield
-    finally:
-        np.random.set_state(state)
 
 
 def get_env_state_for_initial_condition(initial_condition, seeds_dict):

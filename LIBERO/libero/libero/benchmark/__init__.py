@@ -60,7 +60,8 @@ libero_suites = [
     "libero_high_level",
     "libero_low_level",
     "libero_low_level_hard",
-    "libero_conj"
+    "libero_conj",
+    "libero_single"
 ]
 task_maps = {}
 max_len = 0
@@ -116,7 +117,7 @@ class Benchmark(abc.ABC):
 
     def _make_benchmark(self):
         tasks = list(task_maps[self.name].values())
-        if self.name in ["libero_90", "libero_high_level", "libero_low_level", "libero_low_level_hard", "libero_conj"]:
+        if self.name in ["libero_90", "libero_high_level", "libero_low_level", "libero_low_level_hard", "libero_conj", "libero_single"]:
             self.tasks = tasks
         else:
             print(f"[info] using task orders {task_orders[self.task_order_index]}")
@@ -163,7 +164,7 @@ class Benchmark(abc.ABC):
             self.tasks[i].problem_folder,
             self.tasks[i].init_states_file,
         )
-        init_states = torch.load(init_states_path, weights_only=False)
+        init_states = torch.load(init_states_path)
         return init_states
 
     def set_task_embs(self, task_embs):
@@ -249,4 +250,11 @@ class LIBERO_CONJ(Benchmark):
     def __init__(self, task_order_index=0):
         super().__init__(task_order_index=task_order_index)
         self.name = "libero_conj"
+        self._make_benchmark()
+
+@register_benchmark
+class LIBERO_SINGLE(Benchmark):
+    def __init__(self, task_order_index=0):
+        super().__init__(task_order_index=task_order_index)
+        self.name = "libero_single"
         self._make_benchmark()

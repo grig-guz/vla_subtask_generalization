@@ -15,6 +15,10 @@ VALIDATE_PREDICATE_FN_DICT = {
     "close": Close(),
     "turnon": TurnOn(),
     "turnoff": TurnOff(),
+    "grasped": Grasped(),
+    "ungrasped": Ungrasped(),
+    "lifted": Up(),
+    "over": Over()
 }
 
 

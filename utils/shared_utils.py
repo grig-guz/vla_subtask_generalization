@@ -1,17 +1,23 @@
 import os
-
-import os
-import sys
-import threading
-import shutil
 import torch
 import numpy as np
 import random 
-import tensorflow as tf
+
+
 from pathlib import Path
 from omegaconf import OmegaConf
+import math
+import contextlib
 
 
+@contextlib.contextmanager
+def temp_seed(seed):
+    state = np.random.get_state()
+    np.random.seed(seed)
+    try:
+        yield
+    finally:
+        np.random.set_state(state)
 
 
 def run_validation(policy, eval_type, model_name, global_step, config_path="utils/med_tasks_config.yaml"):
@@ -81,56 +87,7 @@ def set_seed_everywhere(seed: int):
     torch.backends.cudnn.benchmark = False
     os.environ["PYTHONHASHSEED"] = str(seed)
 
-def resize_image(img, resize_size, primary=True):
-    """
-    Takes numpy array corresponding to a single image and returns resized image as numpy array.
 
-    NOTE (Moo Jin): To make input images in distribution with respect to the inputs seen at training time, we follow
-                    the same resizing scheme used in the Octo dataloader, which OpenVLA uses for training.
-    """
-    assert isinstance(resize_size, tuple)
-    # Resize to image size expected by model
-    img = tf.image.encode_jpeg(img)  # Encode as JPEG, as done in RLDS dataset builder
-    img = tf.io.decode_image(img, expand_animations=False, dtype=tf.uint8)  # Immediately decode back
-    img = tf.image.resize(img, resize_size, method="lanczos3", antialias=True)
-
-    # If the primary camera image was shifted/scaled in Octo 
-    # (OpenVLA code already handles this)
-    if primary:
-        avg_scale = 0.9
-        avg_ratio = 1.0
-        new_height = tf.clip_by_value(tf.sqrt(avg_scale / avg_ratio), 0, 1)
-        new_width = tf.clip_by_value(tf.sqrt(avg_scale * avg_ratio), 0, 1)
-        height_offset = (1 - new_height) / 2
-        width_offset = (1 - new_width) / 2
-        bounding_box = tf.stack(
-            [
-                height_offset,
-                width_offset,
-                height_offset + new_height,
-                width_offset + new_width,
-            ],
-        )
-        img = tf.image.crop_and_resize(
-            img[None], bounding_box[None], [0], resize_size
-        )[0]
-
-        
-    img = tf.cast(tf.clip_by_value(tf.round(img), 0, 255), tf.uint8)
-    img = img.numpy()
-    return img
-
-
-def get_action(cfg, model, obs, task_label, processor=None):
-    """Queries the model to get an action."""
-    if cfg.model_family == "openvla":
-        action = get_vla_action(
-            model, processor, cfg.pretrained_checkpoint, obs, task_label, cfg.unnorm_key, center_crop=cfg.center_crop
-        )
-        assert action.shape == (ACTION_DIM,)
-    else:
-        raise ValueError("Unexpected `model_family` found in config.")
-    return action
 
 def normalize_gripper_action(action, binarize=True):
     """
@@ -150,6 +107,54 @@ def normalize_gripper_action(action, binarize=True):
         action[..., -1] = np.sign(action[..., -1])
 
     return action
+
+
+def get_libero_dummy_action():
+    """Get dummy/no-op action, used to roll out the simulation while the robot does nothing."""
+    return [0, 0, 0, 0, 0, 0, -1]
+
+def is_noop(action, prev_action=None, threshold=1e-4):
+    """
+    Returns whether an action is a no-op action.
+
+    A no-op action satisfies two criteria:
+        (1) All action dimensions, except for the last one (gripper action), are near zero.
+        (2) The gripper action is equal to the previous timestep's gripper action.
+
+    Explanation of (2):
+        Naively filtering out actions with just criterion (1) is not good because you will
+        remove actions where the robot is staying still but opening/closing its gripper.
+        So you also need to consider the current state (by checking the previous timestep's
+        gripper action as a proxy) to determine whether the action really is a no-op.
+    """
+    # Special case: Previous action is None if this is the first action in the episode
+    # Then we only care about criterion (1)
+    if prev_action is None:
+        return np.linalg.norm(action[:-1]) < threshold
+
+    # Normal case: Check both criteria (1) and (2)
+    gripper_action = action[-1]
+    prev_gripper_action = prev_action[-1]
+    return np.linalg.norm(action[:-1]) < threshold and gripper_action == prev_gripper_action
+
+def quat2axisangle(quat):
+    """
+    Copied from robosuite: https://github.com/ARISE-Initiative/robosuite/blob/eafb81f54ffc104f905ee48a16bb15f059176ad3/robosuite/utils/transform_utils.py#L490C1-L512C55
+    """
+    # clip quaternion
+    if quat[3] > 1.0:
+        quat[3] = 1.0
+    elif quat[3] < -1.0:
+        quat[3] = -1.0
+
+    den = np.sqrt(1.0 - quat[3] * quat[3])
+    if math.isclose(den, 0.0):
+        # This is (close to) a zero degree rotation, immediately return
+        return np.zeros(3)
+
+    return (quat[:3] * 2.0 * math.acos(quat[3])) / den
+
+
 
 task_categories = {
     "rotate_red_block_right": 1,
@@ -259,173 +264,6 @@ high_to_low_level_mappings = {
          "place_grasped_block_over_table", "ungrasp_block"],
     ]
 }
-
-
-
-
-tasks_low_level = {
-    # Description: Initially, the robot should not be holding anything. At the end, it should be holding the corresponding object.
-    "grasp_red_block": [
-        {"condition": {"red_block": "table", "grasped": 0, "contact": 0}, "effect": {"grasped": "red_block"}},
-        {"condition": {"red_block": "drawer", "drawer": "open", "grasped": 0, "contact": 0}, "effect": {"grasped": "red_block"}},
-        {"condition": {"red_block": "slider_left", "slider": "right", "grasped": 0, "contact": 0}, "effect": {"grasped": "red_block"}},
-        {"condition": {"red_block": "slider_right", "slider": "left", "grasped": 0, "contact": 0}, "effect": {"grasped": "red_block"}},
-    ],
-    "grasp_blue_block": [
-        {
-            "condition": {"blue_block": "table", "grasped": 0, "contact": 0}, 
-            "effect": {"grasped": "blue_block"}
-         },
-        {
-            "condition": {"blue_block": "drawer", "drawer": "open", "grasped": 0, "contact": 0}, 
-            "effect": {"grasped": "blue_block"}
-        },
-        {
-            "condition": {"blue_block": "slider_left", "slider": "right", "grasped": 0, "contact": 0}, 
-            "effect": {"grasped": "blue_block"}
-        },
-        {"condition": {"blue_block": "slider_right", "slider": "left", "grasped": 0, "contact": 0}, 
-         "effect": {"grasped": "blue_block"}},
-    ],
-    "grasp_pink_block": [
-        {
-            "condition": {"pink_block": "table", "grasped": 0, "contact": 0}, 
-            "effect": {"grasped": "pink_block"}
-        },
-        {
-            "condition": {"pink_block": "drawer", "drawer": "open", "grasped": 0, "contact": 0}, 
-            "effect": {"grasped": "pink_block"}
-        },
-        {
-            "condition": {"pink_block": "slider_left", "slider": "right", "grasped": 0, "contact": 0}, 
-            "effect": {"grasped": "pink_block"}
-        },
-        {
-            "condition": {"pink_block": "slider_right", "slider": "left", "grasped": 0, "contact": 0}, 
-            "effect": {"grasped": "pink_block"}
-        },
-    ],
-    "grasp_slider": [{"condition": {"grasped": 0, "contact": 0}, "effect": {"grasped": "slider"}}],
-    "grasp_drawer": [{"condition": {"grasped": 0, "contact": 0}, "effect": {"grasped": "drawer"}}],
-
-
-    # Description: Initially, the robot should be holding an object. At the end, it shouldn't be holding anything.
-    "ungrasp_block": [{"condition": {"grasped": ["red_block", "blue_block", "pink_block"], "contact": 0}, 
-                       "effect": {"grasped": 0, "red_block_lifted": 0, "blue_block_lifted": 0, "pink_block_lifted": 0}
-                       }],
-    "ungrasp_slider": [{"condition": {"grasped": "slider", "contact": 0}, "effect": {"grasped": 0}}],
-    "ungrasp_drawer": [{"condition": {"grasped": "drawer", "contact": 0}, "effect": {"grasped": 0}}],
-
-
-    # Gripper placement
-    "place_grasped_block_over_red_block": [
-        {"condition": {"red_block": "table", 'blue_block_lifted': 1, "contact": 0}, "effect": {'blue_block': 'red_block'}},
-        {"condition": {"red_block": "table", 'pink_block_lifted': 1, "contact": 0}, "effect": {'pink_block': 'red_block'}},
-    ],
-    "place_grasped_block_over_blue_block": [
-        {"condition": {"blue_block": "table", 'red_block_lifted': 1, "contact": 0}, "effect": {'red_block': 'blue_block'}},
-        {"condition": {"blue_block": "table", 'pink_block_lifted': 1, "contact": 0}, "effect": {'pink_block': 'blue_block'}},
-
-    ],
-    "place_grasped_block_over_pink_block": [
-        {"condition": {"pink_block": "table", 'red_block_lifted': 1, "contact": 0}, "effect": {'red_block': 'pink_block'}},
-        {"condition": {"pink_block": "table", 'blue_block_lifted': 1, "contact": 0}, "effect": {'blue_block': 'pink_block'}},
-    ],
-
-    "move_slider_left": [{"condition": {"slider": "right", "grasped": "slider", "contact": 0}, "effect": {"slider": "left"}}],
-    "move_slider_right": [{"condition": {"slider": "left", "grasped": "slider", "contact": 0}, "effect": {"slider": "right"}}],
-
-    "open_drawer": [{"condition": {"drawer": "closed", "grasped": "drawer", "contact": 0}, "effect": {"drawer": "open"}}],
-    "close_drawer": [{"condition": {"drawer": "open", "grasped": "drawer", "contact": 0}, "effect": {"drawer": "closed"}}],
-
-    # lifting
-    "lift_grasped_block": [
-        {"condition": {"red_block": "table", "grasped": "red_block", "red_block_lifted": 0, "contact": 0}, "effect": {"red_block_lifted": 1}},
-        {"condition": {"blue_block": "table", "grasped": "blue_block", "blue_block_lifted": 0, "contact": 0}, "effect": {"blue_block_lifted": 1   }},
-        {"condition": {"pink_block": "table", "grasped": "pink_block", "pink_block_lifted": 0, "contact": 0}, "effect": {"pink_block_lifted": 1}},
-        {"condition": {"red_block": "slider_left", "grasped": "red_block", "red_block_lifted": 0, "contact": 0}, "effect": {"red_block_lifted": 1}},
-        {"condition": {"blue_block": "slider_left", "grasped": "blue_block", "blue_block_lifted": 0, "contact": 0}, "effect": { "blue_block_lifted": 1}},
-        {"condition": {"pink_block": "slider_left", "grasped": "pink_block", "pink_block_lifted": 0, "contact": 0}, "effect": { "pink_block_lifted": 1}},
-        {"condition": {"red_block": "slider_right", "grasped": "red_block", "red_block_lifted": 0, "contact": 0}, "effect": { "red_block_lifted": 1}},
-        {"condition": {"blue_block": "slider_right", "grasped": "blue_block", "blue_block_lifted": 0, "contact": 0}, "effect": { "blue_block_lifted": 1}},
-        {"condition": {"pink_block": "slider_right", "grasped": "pink_block", "pink_block_lifted": 0, "contact": 0}, "effect": { "pink_block_lifted": 1}},
-        {"condition": {"red_block": "drawer", "grasped": "red_block", "red_block_lifted": 0, "contact": 0}, "effect": { "red_block_lifted": 1}},
-        {"condition": {"blue_block": "drawer", "grasped": "blue_block", "blue_block_lifted": 0, "contact": 0}, "effect": { "blue_block_lifted": 1}},
-        {"condition": {"pink_block": "drawer", "grasped": "pink_block", "pink_block_lifted": 0, "contact": 0}, "effect": {"pink_block_lifted": 1}}
-    ],
-
-    # rotation
-    "rotate_grasped_block_right": [
-        {"condition": {"red_block": "table", "grasped": "red_block", "contact": 0}, "effect": {"red_block": "table", "red_block_lifted": 1}},
-        {"condition": {"blue_block": "table", "grasped": "blue_block", "contact": 0}, "effect": {"blue_block": "table", "blue_block_lifted": 1}},
-        {"condition": {"pink_block": "table", "grasped": "pink_block", "contact": 0}, "effect": {"pink_block": "table", "pink_block_lifted": 1}},
-    ],
-
-    "rotate_grasped_block_left": [
-        {"condition": {"red_block": "table", "grasped": "red_block", "contact": 0}, "effect": {"red_block": "table", "red_block_lifted": 1}},
-        {"condition": {"blue_block": "table", "grasped": "blue_block", "contact": 0}, "effect": {"blue_block": "table", "blue_block_lifted": 1}},
-        {"condition": {"pink_block": "table", "grasped": "pink_block", "contact": 0}, "effect": {"pink_block": "table", "pink_block_lifted": 1}},
-    ],
-
-    # open/close (slider, drawer) -> grasp slider/drawer + 
-    "place_grasped_block_over_drawer": [        
-        {
-            "condition": {"red_block": ["table", "slider_right", "slider_left", "blue_block", "pink_block"], "drawer": "open", "grasped": "red_block", 'red_block_lifted': 1, "contact": 0},
-            "effect": {"red_block": "drawer", "grasped": "red_block"},
-        },
-        {
-            "condition": {"blue_block": ["table", "slider_right", "slider_left", "red_block", "pink_block"], "drawer": "open", "grasped": "blue_block", 'blue_block_lifted': 1, "contact": 0},
-            "effect": {"blue_block": "drawer", "grasped": "blue_block"},
-        },
-        {
-            "condition": {"pink_block": ["table", "slider_right", "slider_left", "red_block", "blue_block"], "drawer": "open", "grasped": "pink_block", 'pink_block_lifted': 1, "contact": 0},
-            "effect": {"pink_block": "drawer", "grasped": "pink_block"},
-        },
-    ],
-
-    "place_grasped_block_over_slider": [
-        {
-            "condition": {"red_block": ["table", "drawer", "blue_block", "pink_block"], "slider": "right", "grasped": "red_block", 'red_block_lifted': 1, "contact": 0},
-            "effect": {"red_block": "slider_left"},
-        },
-        {
-            "condition": {"red_block": ["table", "drawer", "blue_block", "pink_block"], "slider": "left", "grasped": "red_block", 'red_block_lifted': 1, "contact": 0},
-            "effect": {"red_block": "slider_right"},
-        },
-        {
-            "condition": {"blue_block": ["table", "drawer", "red_block", "pink_block"], "slider": "right", "grasped": "blue_block", 'blue_block_lifted': 1, "contact": 0},
-            "effect": {"blue_block": "slider_left"},
-        },
-        {
-            "condition": {"blue_block": ["table", "drawer", "red_block", "pink_block"], "slider": "left", "grasped": "blue_block", 'blue_block_lifted': 1, "contact": 0},
-            "effect": {"blue_block": "slider_right"},
-        },
-        {
-            "condition": {"pink_block": ["table", "drawer", "red_block", "blue_block"], "slider": "right", "grasped": "pink_block", 'pink_block_lifted': 1, "contact": 0},
-            "effect": {"pink_block": "slider_left"},
-        },
-        {
-            "condition": {"pink_block": ["table", "drawer", "red_block", "blue_block"], "slider": "left", "grasped": "pink_block", 'pink_block_lifted': 1, "contact": 0},
-            "effect": {"pink_block": "slider_right"},
-        },
-    ],
-
-    "place_grasped_block_over_table": [
-        {
-            "condition": {"red_block": ["drawer", "slider_right", "slider_left", "blue_block", "pink_block"], "grasped": "red_block", 'red_block_lifted': 1, "contact": 0},
-            "effect": {"red_block": "table"},
-        },
-        {
-            "condition": {"blue_block": ["drawer", "slider_right", "slider_left", "red_block", "pink_block"], "grasped": "blue_block", 'blue_block_lifted': 1, "contact": 0},
-            "effect": {"blue_block": "table"},
-        },
-        {
-            "condition": {"pink_block": ["drawer", "slider_right", "slider_left", "red_block", "blue_block"], "grasped": "pink_block", 'pink_block_lifted': 1, "contact": 0},
-            "effect": {"pink_block": "table"},
-        },
-    ],
-}
-
 
 tasks = {
     # Rotate

@@ -97,7 +97,9 @@ def robosuite_parse_problem(problem_filename):
         fixtures = {}
         regions = {}
         scene_properties = {}
+        subgoal_states = []
         language_instruction = ""
+        subgoal_instructions = []
         while tokens:
             group = tokens.pop()
             t = group[0]
@@ -147,12 +149,17 @@ def robosuite_parse_problem(problem_filename):
             elif t == ":language":
                 group.pop(0)
                 language_instruction = group
-
             elif t == ":init":
                 group.pop(0)
                 initial_state = group
             elif t == ":goal":
                 package_predicates(group[1], goal_state, "", "goals")
+            elif t == ":subgoals":
+                group.pop(0)
+                package_predicates_seq(group, subgoal_states, "", "subgoals")
+            elif t == ":subgoal_instructions":
+                group.pop(0)
+                package_subgoal_instructions(group, subgoal_instructions)
             else:
                 print("%s is not recognized in problem" % t)
         return {
@@ -165,8 +172,31 @@ def robosuite_parse_problem(problem_filename):
             "goal_state": goal_state,
             "language_instruction": language_instruction,
             "obj_of_interest": obj_of_interest,
+            "subgoal_states": subgoal_states,
+            "subgoal_instructions": subgoal_instructions
         }
     else:
         raise Exception(
             f"Problem {behavior_activity} {activity_definition} does not match problem pattern"
         )
+
+
+def package_predicates_seq(group, subgoals, name, part):
+    if not isinstance(group, list):
+        raise Exception('Error with ' + name + part)
+    if group[0] == 'and':
+        group.pop(0)
+    
+    for sg in group:
+        if sg[0] == 'and':
+            sg.pop(0)
+
+        new_sg = []
+        for predicate in sg:
+            new_sg.append(predicate)
+        subgoals.append(new_sg)
+
+
+def package_subgoal_instructions(group, subgoal_instructions):
+    for instr in group:
+        subgoal_instructions.append(" ".join(instr[1:]))
