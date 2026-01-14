@@ -49,7 +49,7 @@ cd ../../
 In addition, Pi0-FAST requires converting the datasets from the RLDS format (in the link above) to the LeRobot format. 
 ```
 cd models/openpi
-uv run examples/libero/convert_libero_calvin_data_to_lerobot.py --data_dir RLDS_DATASETS_PATH
+uv run examples/libero/convert_calvin_data_to_lerobot.py --data_dir RLDS_DATASETS_PATH
 uv run scripts/compute_norm_stats.py --config-name libero_high_level
 uv run scripts/compute_norm_stats.py --config-name libero_conj
 uv run scripts/compute_norm_stats.py --config-name libero_low_level
