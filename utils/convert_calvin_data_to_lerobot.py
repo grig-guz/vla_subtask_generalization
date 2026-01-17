@@ -21,48 +21,61 @@ Running this conversion script will take approximately 30 minutes.
 import shutil
 from pathlib import Path
 import sys
-sys.path.append(".") # to import lerobot at the /openpi repo
-from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+from lerobot.datasets.lerobot_dataset import LeRobotDataset
 import tensorflow_datasets as tfds
 import tyro
+import sys
+import numpy as np
+sys.path.append("/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/")
+from utils.calvin_utils import get_calvin_env
 
-REPO_NAMES = ["calvin_high_level", 
-              "calvin_conj", 
-              "calvin_low_level",
-              "libero_high_level", 
-              "libero_conj", 
-              "libero_low_level",
+
+REPO_NAMES = ["calvin_high_level_wrist", 
+              #"libero_low_level",
+              #"libero_high_level", 
+              #"libero_conj", 
+              #"calvin_conj", 
               ]
 
 
 def main(data_dir: str, *, push_to_hub: bool = False):
-    print("hello")
+    calvin_env, _ = get_calvin_env(
+            train_cfg_path=None,
+            merged_cfg_path="/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/utils/med_tasks_config.yaml",
+            model='',
+            device_id=0,
+    )
+
     for REPO_NAME in REPO_NAMES:
 
         # Create LeRobot dataset, define features to store
         # OpenPi assumes that proprio is stored in `state` and actions in `action`
         # LeRobot assumes that dtype of image data is `image`
+        if 'calvin' in REPO_NAME:
+            state_dim = 15
+        else:
+            state_dim = 9
         dataset = LeRobotDataset.create(
             repo_id=REPO_NAME,
             robot_type="panda",
             fps=30,
             features={
-                "image": {
+                "observation.images.camera1": {
                     "dtype": "image",
                     "shape": (256, 256, 3),
                     "names": ["height", "width", "channel"],
                 },
-                #"wrist_image": {
-                #    "dtype": "image",
-                #    "shape": (256, 256, 3),
-                #    "names": ["height", "width", "channel"],
-                #},
-                "state": {
+                "observation.images.camera2": {
+                    "dtype": "image",
+                    "shape": (256, 256, 3),
+                    "names": ["height", "width", "channel"],
+                },
+                "observation.state": {
                     "dtype": "float64",
-                    "shape": (15,),
+                    "shape": (state_dim,),
                     "names": ["state"],
                 },
-                "actions": {
+                "action": {
                     "dtype": "float64",
                     "shape": (7,),
                     "names": ["actions"],
@@ -77,12 +90,19 @@ def main(data_dir: str, *, push_to_hub: bool = False):
         raw_dataset = tfds.load(REPO_NAME, data_dir=data_dir, split="train")
         for episode in raw_dataset:
             for step in episode["steps"].as_numpy_iterator():
+                if 'calvin' in REPO_NAME:
+                    calvin_env.reset(robot_obs=step["observation"]["state"], scene_obs=step["observation"]["scene_state"])
+                    viz = calvin_env.get_obs()
+                    wrist_cam = viz['rgb_obs']['rgb_gripper']
+                else:
+                    wrist_cam = step["observation"]["wrist_image"]
                 dataset.add_frame(
                     {
-                        "image": step["observation"]["image"],
-                        #"wrist_image": step["observation"]["wrist_image"],
-                        "state": step["observation"]["state"],
-                        "actions": step["action"],
+                        "observation.images.camera1": step["observation"]["image"],
+                        "observation.images.camera2": wrist_cam,#np.zeros((256, 256, 3)),#wrist_cam,#step["observation"]["wrist_image"],
+                        #'observation.images.camera2_is_pad': True,
+                        "observation.state": step["observation"]["state"],
+                        "action": step["action"],
                         "task": step["language_instruction"].decode()
                     }
                 )

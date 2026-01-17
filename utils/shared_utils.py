@@ -20,7 +20,7 @@ def temp_seed(seed):
         np.random.set_state(state)
 
 
-def run_validation(policy, eval_type, model_name, global_step, config_path="utils/med_tasks_config.yaml"):
+def run_validation(policy, eval_type, model_name, global_step, processors=None, config_path="utils/med_tasks_config.yaml"):
     from run_calvin_eval import evaluate_policy
     from run_libero_eval import evaluate_libero_policy
     from utils.calvin_utils import get_calvin_env
@@ -32,6 +32,7 @@ def run_validation(policy, eval_type, model_name, global_step, config_path="util
             model_name=model_name,
             action_horizon=10,
             policy=policy,
+            processors=processors,
             num_steps_wait=10,
             timestep=global_step
         )
@@ -64,7 +65,7 @@ def run_validation(policy, eval_type, model_name, global_step, config_path="util
         _, new_rate, _, _ = evaluate_policy(
             cfg=calvin_cfg, 
             model=policy,
-            processor=None, 
+            processors=processors, 
             env=env, 
             task_oracle=tasks,
             annotations=tasks_ann,

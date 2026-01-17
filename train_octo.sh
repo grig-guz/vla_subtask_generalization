@@ -7,7 +7,7 @@ CALVIN_CONFIG_PATH="./utils/med_tasks_config.yaml"
 SEED=1
 
 
-TRAIN_DATASET="calvin_conj" # calvin_high_level, calvin_conj, calvin_low_level, libero_high_level, libero_conj, libero_low_level
+TRAIN_DATASET="calvin_high_level" # calvin_high_level, calvin_conj, calvin_low_level, libero_high_level, libero_conj, libero_low_level
 
 RANDOM_INIT=False # whether to initialize the model weights randomly (instead of using pretrained weights)
 MODEL_SIZE=small # small or base

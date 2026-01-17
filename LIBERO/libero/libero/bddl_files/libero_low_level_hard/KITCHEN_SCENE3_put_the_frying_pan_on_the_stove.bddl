@@ -64,5 +64,4 @@
   (:goal
     (And (On chefmate_8_frypan_1 flat_stove_1_cook_region) (And (Not (On moka_pot_1 flat_stove_1_cook_region)) (Not (Turnon flat_stove_1))))
   )
-
 )

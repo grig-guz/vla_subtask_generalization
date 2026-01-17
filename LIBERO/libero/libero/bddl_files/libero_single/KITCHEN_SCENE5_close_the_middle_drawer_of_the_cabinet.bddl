@@ -1,6 +1,6 @@
 (define (problem LIBERO_Sequential_Kitchen_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language put the black bowl in the bottom drawer of the cabinet)
+  (:language close the middle drawer of the cabinet)
     (:regions
       (white_cabinet_init_region
           (:target kitchen_table)
@@ -72,7 +72,6 @@
   )
 
   (:obj_of_interest
-    akita_black_bowl_1
     white_cabinet_1
   )
 
@@ -81,24 +80,22 @@
     (On plate_1 kitchen_table_plate_init_region)
     (On white_cabinet_1 kitchen_table_white_cabinet_init_region)
     (On ketchup_1 kitchen_table_ketchup_init_region)
-    (Open white_cabinet_1_bottom_region)
+    (Open white_cabinet_1_middle_region)
   )
 
   (:goal
-    (And (In akita_black_bowl_1 white_cabinet_1_bottom_region))
+    (And (Close white_cabinet_1_middle_region))
   )
 
   (:subgoals
-    (And (Grasped akita_black_bowl_1))
-    (And (Lifted akita_black_bowl_1))
-    (And (Over akita_black_bowl_1 white_cabinet_1_bottom_region))
-    (And (Ungrasped akita_black_bowl_1))
+    (And (Grasped white_cabinet_1_middle_region))
+    (And (Close white_cabinet_1_middle_region))
+    (And (Ungrasped white_cabinet_1_middle_region))
   )
 
   (:subgoal_instructions
-    (:subgoal_instruction grasp the black bowl)
-    (:subgoal_instruction lift the grasped object)
-    (:subgoal_instruction place the object over the bottom drawer of the cabinet)
+    (:subgoal_instruction grasp the handle of the middle drawer)
+    (:subgoal_instruction push the drawer in)
     (:subgoal_instruction ungrasp the object)
   )
 
