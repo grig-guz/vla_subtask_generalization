@@ -282,6 +282,8 @@ class RolloutVideo:
         """
         Mostly taken from WandB
         """
+        import wandb
+        
         for video, tag in zip(self.videos, self.tags):
             if len(video.shape) == 4:
                 video = video.unsqueeze(0)

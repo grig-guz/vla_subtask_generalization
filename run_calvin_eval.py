@@ -14,13 +14,13 @@ import logging
 import cv2
 import os
 
-from utils.calvin_utils import get_env_state_for_initial_condition, get_env_and_checkpoint
+from utils.calvin_utils import get_env_state_for_initial_condition, get_env_and_checkpoint, resize_image, add_text
 from utils.rollout_video import RolloutVideo
 
 from utils.multistep_sequences import get_sequences
 from utils.multistep_sequences_low_level_random import get_low_level_random_sequences
 from utils.multistep_sequences_high2low_chain import get_sequences_high2low_chain
-from utils.shared_utils import resize_image, high_to_low_level_mappings, normalize_gripper_action, set_seed_everywhere
+from utils.shared_utils import high_to_low_level_mappings, normalize_gripper_action, set_seed_everywhere
 
 from omegaconf import OmegaConf
 
@@ -72,42 +72,9 @@ def count_success(results):
 def get_video_tag(i):
     return f"_long_horizon/sequence_{i}"
 
-def add_text(img, lang_text, loc='bot'):
-    height, width, _ = img.shape
-    if lang_text != "":
-        if loc == 'bot':
-            coord = (1, int(height - 10))
-        elif loc == 'top':
-            coord = (1, 10)
-        else:
-            raise Exception("Unknown location of text to be drawn at")
-
-        font_scale = (0.7 / 500) * width
-        thickness = 1
-        cv2.putText(
-            img,
-            text=lang_text,
-            org=coord,
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=font_scale,
-            color=(0, 0, 0),
-            thickness=thickness * 3,
-            lineType=cv2.LINE_AA,
-        )
-        cv2.putText(
-            img,
-            text=lang_text,
-            org=coord,
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=font_scale,
-            color=(255, 255, 255),
-            thickness=thickness,
-            lineType=cv2.LINE_AA,
-        )
-
-
-def evaluate_policy(cfg, model, processor, env, task_oracle, annotations, eval_sequences, counters, seeds_dict=None, num_sequences=1000):
+def evaluate_policy(cfg, model, processors, env, task_oracle, annotations, eval_sequences, counters, seeds_dict=None, num_sequences=1000):
     task_oracle = hydra.utils.instantiate(task_oracle)
+
     if counters is not None:
         counters["errors"] = []
 
@@ -149,7 +116,7 @@ def evaluate_policy(cfg, model, processor, env, task_oracle, annotations, eval_s
             high_level_task=high_level_task,
             cfg=cfg,
             model=model, 
-            processor=processor,
+            processors=processors,
             env=env, 
             task_oracle=task_oracle, 
             annotations=annotations,
@@ -188,7 +155,7 @@ def evaluate_policy(cfg, model, processor, env, task_oracle, annotations, eval_s
 
 
 def evaluate_sequence(
-    eval_sequence, i, initial_state, high_level_task, cfg, model, processor, env, task_oracle, annotations, record, rollout_video, 
+    eval_sequence, i, initial_state, high_level_task, cfg, model, processors, env, task_oracle, annotations, record, rollout_video, 
     counters, seeds_dict
 ):
     if counters is not None:
@@ -222,6 +189,7 @@ def evaluate_sequence(
             lang_annotation=lang_annotation,
             cfg=cfg,
             model=model,
+            processors=processors,
             env=env, 
             task_oracle=task_oracle,
             record=record, 
@@ -241,10 +209,10 @@ def evaluate_sequence(
     return success_counter
 
 
-def rollout(task, lang_annotation, cfg, model, env, task_oracle, record=False, rollout_video=None, counters=None):
+def rollout(task, lang_annotation, cfg, model, processors, env, task_oracle, record=False, rollout_video=None, counters=None):
 
     obs = env.get_obs()
-
+    goal = None
     if cfg.model == 'octo':
         from octo.utils.train_callbacks import supply_rng
         policy_fn = supply_rng(
@@ -257,18 +225,26 @@ def rollout(task, lang_annotation, cfg, model, env, task_oracle, record=False, r
         model = policy_fn
     elif cfg.model == 'cogact':
         model.reset()
+
     window_size = cfg.action_horizon
     act_step = cfg.action_horizon
 
+    if cfg.model in ['smolvla', 'groot']:
+        window_size = 1
+        act_step = 1
+        model.config.n_action_steps = 10
+        model.reset()
+        
     start_info = env.get_info()
     past_obs = None
     action_buffer = None
     
     for step in range(cfg.ep_len):
         
-        action, action_buffer = get_action(
+        action, action_buffer, act_step = get_action(
             cfg=cfg,
             model=model,
+            processors=processors,
             obs=obs,
             past_obs=past_obs,
             lang_annotation=lang_annotation,
@@ -314,20 +290,24 @@ def rollout(task, lang_annotation, cfg, model, env, task_oracle, record=False, r
 
     return False
 
-def get_action(cfg, model, obs, past_obs, lang_annotation, goal, act_step, action_buffer, window_size, step):
+def get_action(cfg, model, processors, obs, past_obs, lang_annotation, goal, act_step, action_buffer, window_size, step):
     if act_step > 0 and act_step % window_size == 0:
+        primary_img = obs['rgb_obs']['rgb_static']
+        gripper_img = obs['rgb_obs']['rgb_gripper']
+        state = obs['robot_obs']
         act_step = 0
+
         if cfg.model == 'octo':
-                static_2 = resize_image(obs['rgb_obs']['rgb_static'], (256, 256), primary=True)
-                gripper_2 = resize_image(obs['rgb_obs']['rgb_gripper'], (128, 128))
+                static_2 = resize_image(primary_img, (256, 256), primary=True)
+                gripper_2 = resize_image(gripper_img, (128, 128))
                 if past_obs:
                     static_1 = resize_image(past_obs['rgb_obs']['rgb_static'], (256, 256), primary=True)
                     gripper_1 = resize_image(past_obs['rgb_obs']['rgb_gripper'], (128, 128))
-                    image_primary = np.stack([static_1, static_2])
+                    primary_img_stacked = np.stack([static_1, static_2])
                     image_wrist = np.stack([gripper_1, gripper_2])
                     timestep_pad_mask = np.array([[True, True]])
                 else:
-                    image_primary = np.stack([np.zeros((256, 256, 3)), static_2])
+                    primary_img_stacked = np.stack([np.zeros((256, 256, 3)), static_2])
                     image_wrist = np.stack([np.zeros((128, 128, 3)), gripper_2])
                     timestep_pad_mask = np.array([[False, True]])
 
@@ -337,31 +317,47 @@ def get_action(cfg, model, obs, past_obs, lang_annotation, goal, act_step, actio
                 }
                 
                 observation = {
-                        "image_primary": np.expand_dims(image_primary, 0),  # uint8
+                        "image_primary": np.expand_dims(primary_img_stacked, 0),  # uint8
                         "timestep_pad_mask": timestep_pad_mask,
                         "pad_mask_dict": pad_mask_dict,
                         "timestep": np.array([[step-1, step]]),
                 }
-                if 'wrist' in cfg.image_obs_keys:
-                    observation['image_wrist'] = np.expand_dims(image_wrist, 0)
-                    pad_mask_dict["image_wrist"] = np.array([[True, True]])
-                
-                act_buffer = model(observation, goal)
-                act_buffer = np.array(act_buffer[0])
+                #if 'wrist' in cfg.image_obs_keys:
+                #    observation['image_wrist'] = np.expand_dims(image_wrist, 0)
+                #    pad_mask_dict["image_wrist"] = np.array([[True, True]])
+                action_buffer = model(observation, goal)
+                action_buffer = np.array(action_buffer[0])
+
         elif cfg.model == 'cogact':
-            image = obs['rgb_obs']['rgb_static']
-            action_buffer = model.step(image=image, task_description=lang_annotation)
+            action_buffer = model.step(image=primary_img, task_description=lang_annotation)
+            action_buffer = np.array(action_buffer)
         elif cfg.model == 'pi0_fast':
-            img = obs['rgb_obs']['rgb_static']
-            state = obs['robot_obs']
-            inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
-            act_buffer = model.infer(inputs)["actions"]        
+            inputs = {"observation/image": primary_img, "observation/state": state, "prompt": lang_annotation}
+            action_buffer = model.infer(inputs)["actions"]
+            action_buffer = np.array(action_buffer)
+        elif cfg.model in ['smolvla', 'groot']:
+            preprocessor, postprocessor = processors
+            main_img = torch.permute(torch.tensor(primary_img, device="cuda:0", dtype=torch.float32), (2, 0, 1)).unsqueeze(0)
+            observation = {
+                "observation.images.camera1": main_img.div(255),
+                "observation.images.camera2": torch.zeros(((1, 3, 256, 256)), device="cuda:0"),
+                #'observation.images.camera2_is_pad': torch.tensor([True], device="cuda:0"),
+                "observation.state": torch.tensor(state, dtype=torch.float32, device="cuda:0"),
+                "task": lang_annotation
+            }
+
+            proc_observation = preprocessor(observation)
+            action_buffer = model.select_action(proc_observation)
+            # LeRobot handles action chunks on its own
+            action_buffer = np.array(postprocessor(action_buffer))
+            action = action_buffer[0]
+            return action, action_buffer, act_step
         else:
             raise Exception("Unknown model!")
     
-    action = np.array(action_buffer[act_step])
+    action = action_buffer[act_step]
     action = normalize_gripper_action(action)
-    return action, action_buffer
+    return action, action_buffer, act_step
 
 
 def log_run_result(counters, task, lang_annotation, result, record, rollout_video):
@@ -428,7 +424,7 @@ def eval_calvin(cfg: GenerateConfig) -> None:
     results, average_rate, success_rates, counters = evaluate_policy(
                     cfg=calvin_cfg,
                     model=model,
-                    processor=processor,
+                    processors=processor,
                     env=env,
                     task_oracle=task_oracle, 
                     annotations=task_annotation, 

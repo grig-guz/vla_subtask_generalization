@@ -16,10 +16,10 @@ import cv2
 import os
 import imageio
 
-from utils.calvin_utils import  get_libero_env, get_libero_dummy_action, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, invert_gripper_action
-from utils.shared_utils import resize_image, high_to_low_level_mappings, get_action, normalize_gripper_action, set_seed_everywhere
+from utils.calvin_utils import  get_libero_env, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, invert_gripper_action, resize_image
+from utils.shared_utils import  high_to_low_level_mappings, normalize_gripper_action, set_seed_everywhere, get_libero_dummy_action, quat2axisangle
 
-from libero.libero import benchmark
+
 
 
 logger = logging.getLogger(__name__)
@@ -87,7 +87,8 @@ def save_rollout_video(video_save_dir, rollout_images, idx, success, task_descri
         print(f"Saved rollout MP4 at path {mp4_path}")
         return mp4_path
 
-def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, action_horizon, policy, num_steps_wait=10, timestep=-1, video_save_dir=None):
+def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, action_horizon, policy, processors=None, num_steps_wait=10, timestep=-1, video_save_dir=None):
+    from libero.libero import benchmark
 
     benchmark_dict = benchmark.get_benchmark_dict()
     task_suite = benchmark_dict[task_suite_name]()
@@ -124,13 +125,15 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
         elif model_name == 'pi0_fast':
             window_size = 10
             act_step = 10
-
+        elif model_name in ['smolvla', 'groot']:
+            window_size = 1
+            act_step = 1
 
         # Start episodes
         task_episodes, task_successes = 0, 0
         for episode_idx in tqdm(range(num_trials_per_task)):
             print(f"\nTask: {lang_annotation}")
-            if model_name == 'cogact':
+            if model_name in ['cogact', 'smolvla', 'groot']:
                 policy.reset()
 
             # Reset environment
@@ -142,7 +145,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
             # Setup
             t = 0
             replay_images = []
-            max_steps = 400
+            max_steps = 500
 
             print(f"Starting episode {task_episodes+1}...")
             past_obs = None
@@ -156,23 +159,23 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                     continue
                 
                 resize_size = 224
-                # Get preprocessed image
-                img = get_libero_image(obs, resize_size)
 
                 # Save preprocessed image for replay video
-                replay_images.append(img)
+                replay_images.append(get_libero_image(obs, resize_size))
 
-                if model_name == 'octo':
-                    if act_step > 0 and act_step % window_size == 0:
-                        act_step = 0
-                        
-                        static_2 = resize_image(obs['agentview_image'][::-1], (256, 256), primary=True)
+                primary_img = obs['agentview_image'][::-1]
+                #wrist_img = 
+                state = np.concatenate((obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"]))
+                if act_step > 0 and act_step % window_size == 0:
+                    act_step = 0
+                    if model_name == 'octo':
+                        static_2 = resize_image(primary_img, (256, 256), primary=True)
                         if past_obs:
                             static_1 = resize_image(past_obs['agentview_image'][::-1], (256, 256), primary=True)
-                            image_primary = np.stack([static_1, static_2])
+                            primary_img_stacked = np.stack([static_1, static_2])
                             timestep_pad_mask = np.array([[True, True]])
                         else:
-                            image_primary = np.stack([np.zeros((256, 256, 3)), static_2])
+                            primary_img_stacked = np.stack([np.zeros((256, 256, 3)), static_2])
                             timestep_pad_mask = np.array([[False, True]])
 
                         pad_mask_dict = {
@@ -181,41 +184,46 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                         }
                         
                         observation = {
-                                "image_primary": np.expand_dims(image_primary, 0),  # uint8
+                                "image_primary": np.expand_dims(primary_img_stacked, 0),  # uint8
                                 "timestep_pad_mask": timestep_pad_mask,
                                 "pad_mask_dict": pad_mask_dict,
                                 "timestep": np.array([[t-1, t]]),
                         }
-                        act_buffer = policy_fn(observation, goal)
-                        act_buffer = np.array(act_buffer[0])
-                        action = act_buffer[act_step]
-                    else:
-                        action = act_buffer[act_step]
-                elif model_name == 'cogact':
-
-                    if act_step > 0 and act_step % window_size == 0:
-                        act_step = 0
-                        image = resize_image(obs['agentview_image'][::-1], (224, 224), primary=True)
-                        action_buffer = policy.step(image=image, task_description=lang_annotation)
+                        action_buffer = policy_fn(observation, goal)
+                        action_buffer = np.array(action_buffer[0])
+                        action = action_buffer[act_step]
+                    elif model_name == 'cogact':
+                        action_buffer = policy.step(image=primary_img, task_description=lang_annotation)
                         action = np.array(action_buffer[act_step])
-                    else:
-                        action = np.array(action_buffer[act_step])
-                elif model_name == 'pi0_fast':
-                    if act_step > 0 and act_step % window_size == 0:
+                    elif model_name == 'pi0_fast':
                         from openpi_client import image_tools
-                        img = np.ascontiguousarray(obs["agentview_image"][::-1])
+                        img = np.ascontiguousarray(primary_img)
                         img = image_tools.convert_to_uint8(
                             image_tools.resize_with_pad(img, 224, 224)
                         )
-                        act_step = 0
-                        state = np.concatenate([obs["robot0_gripper_qpos"], obs["robot0_eef_pos"], obs["robot0_eef_quat"]])
                         inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
-                        act_buffer = policy.infer(inputs)["actions"]
-                        action = act_buffer[act_step]
+                        action_buffer = policy.infer(inputs)["actions"]
+                        action = action_buffer[act_step]
+                    elif model_name in ['smolvla', 'groot']:
+                        preprocessor, postprocessor = processors
+                        primary_img = torch.permute(torch.tensor(primary_img.copy(), device="cuda:0", dtype=torch.float32), (2, 0, 1)).unsqueeze(0)
+                        observation = {
+                            "observation.images.camera1": primary_img.div(255),
+                            "observation.images.camera2": torch.zeros(((1, 3, 256, 256)), device="cuda:0"),
+                            #'observation.images.camera2_is_pad': torch.tensor([True], device="cuda:0"),
+                            "observation.state": torch.tensor(state, dtype=torch.float32, device="cuda:0"),
+                            "task": lang_annotation
+                        }
+                        proc_observation = preprocessor(observation)
+                        action_buffer = model.select_action(proc_observation)
+                        # LeRobot handles action chunks on its own
+                        action_buffer = np.array(postprocessor(action_buffer))
+                        action = action_buffer[0]
                     else:
-                        action = act_buffer[act_step]
+                        raise Exception("Unknown model!")
                 else:
-                    raise Exception("Unknown model!")
+                    action = action_buffer[act_step]
+
                 
                 act_step += 1
                 if model_name in ['octo', 'cogact']:
@@ -244,13 +252,6 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
             print(f"# episodes completed so far: {total_episodes}")
             print(f"# successes: {total_successes} ({total_successes / total_episodes * 100:.1f}%)")
         
-        #if cfg.use_wandb:
-        #    wandb.log(
-        #        {
-        #            f"success_rate/{task_description}": float(task_successes) / float(task_episodes),
-        #            f"num_episodes/{task_description}": task_episodes,
-        #        }
-        #    )
 
         per_task_rates[lang_annotation] = float(task_successes) / float(task_episodes)
         # Log final results

@@ -442,7 +442,7 @@ def main(_):
             train_state, update_info = train_step(train_state, batch)
 
         timer.tock("total")
-        print(timer.get_average_times())
+        #print(timer.get_average_times())
         if (i + 1) % FLAGS.config.log_interval == 0:
             update_info = jax.device_get(update_info)
             

@@ -28,10 +28,13 @@ from calvin_env.envs.play_table_env import get_env
 from calvin_env.utils.utils import EglDeviceNotFoundError, get_egl_device_id
 import time
 from collections import Counter
+from utils.shared_utils import temp_seed
 
 
 logger = logging.getLogger(__name__)
 DEFAULT_TRANSFORM = OmegaConf.create({"train": None, "val": None})
+
+
 
 
 def resize_image(img, resize_size, primary=True):
@@ -104,14 +107,17 @@ def get_env_and_checkpoint(cfg):
     elif cfg.model == 'cogact':
         model, processor = load_cogact_checkpoint(cfg.pretrained_checkpoint)
         calvin_cfg.action_horizon = 10
+    elif cfg.model in ['smolvla', 'groot']:
+        model, processor = load_smolvla_groot_checkpoint(cfg.pretrained_checkpoint)
+        calvin_cfg.action_horizon = 10
+
 
     calvin_cfg.ep_len = 360
-    calvin_cfg.num_sequences = 1000
-    calvin_cfg.num_videos = 0
 
     return model, processor, env, calvin_cfg
 
 def load_octo_checkpoint(checkpoint_path, cfg, calvin_cfg):
+
     from models.octo.octo.model.octo_model import OctoModel
 
     model = OctoModel.load_pretrained(checkpoint_path)
@@ -121,6 +127,35 @@ def load_octo_checkpoint(checkpoint_path, cfg, calvin_cfg):
     if calvin_cfg != None:
         calvin_cfg.image_obs_keys = finetune_config['dataset_kwargs']['image_obs_keys']
     return model, processor, calvin_cfg
+
+def load_smolvla_groot_checkpoint(checkpoint_path):
+    
+    from lerobot.policies.factory import make_pre_post_processors
+
+    if 'smolvla' in checkpoint_path:
+        from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
+        policy_cls = SmolVLAPolicy
+    elif 'groot' in checkpont_path:
+        from lerobot.policies.groot.groot_n1 import GR00TN15
+        policy_cls = GR00TN15
+
+
+    policy = policy_cls.from_pretrained(checkpoint_path).to("cuda").eval()
+    policy.config.n_action_steps = 10
+    
+    preprocessor_overrides = {
+        "device_processor": {"device": str(policy.config.device)},
+        "rename_observations_processor": {"rename_map": {}},
+    }
+
+    processors = make_pre_post_processors(
+        policy_cfg=policy.config,
+        pretrained_path=checkpoint_path,
+        preprocessor_overrides=preprocessor_overrides,
+    )
+
+    return policy, processors
+
 
 
 def invert_gripper_action(action):
@@ -330,9 +365,6 @@ class HulcWrapper(gym.Wrapper):
         os.environ["EGL_VISIBLE_DEVICES"] = str(egl_id)
         logger.info(f"EGL_DEVICE_ID {egl_id} <==> CUDA_DEVICE_ID {cuda_id}")
 
-    def transform_observation(self, obs: Dict[str, Any]) -> Dict[str, Union[torch.Tensor, Dict[str, torch.Tensor]]]:
-        return obs
-
     def step(
         self, action_tensor: torch.Tensor, use_angles=False
     ) -> Tuple[Dict[str, Union[torch.Tensor, Dict[str, torch.Tensor]]], int, bool, Dict]:
@@ -354,9 +386,8 @@ class HulcWrapper(gym.Wrapper):
         start = time.time()
         o, r, d, i = self.env.step(action, use_angles)
         start = time.time()
-        obs = self.transform_observation(o)
 
-        return obs, r, d, i
+        return o, r, d, i
 
     def reset(
         self,
@@ -376,15 +407,14 @@ class HulcWrapper(gym.Wrapper):
         else:
             obs = self.env.reset()
 
-        return self.transform_observation(obs)
+        return obs
 
     def get_info(self):
         return self.env.get_info()
 
     def get_obs(self):
         obs = self.env.get_obs()
-        return self.transform_observation(obs)
-
+        return obs
 
 
 def add_text(img, lang_text, loc='bot'):

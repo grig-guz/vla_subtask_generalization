@@ -11,8 +11,7 @@ import numpy as np
 import sys
 sys.path.append(".")
 
-from utils.shared_utils import tasks, high_to_low_level_mappings, task_categories
-from utils.calvin_utils import temp_seed
+from utils.shared_utils import tasks, high_to_low_level_mappings, task_categories, temp_seed
 
 logger = logging.getLogger(__name__)
 

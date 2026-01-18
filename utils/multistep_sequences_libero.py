@@ -87,173 +87,44 @@ class LiberoTask:
         raise Exception("Implement object naming!")
 
 
-class GraspRigid(LiberoTask):
+class PickPlaceObj(LiberoTask):
 
     def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
         super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
-
         if not self.target_obj:
             self.target_obj = np.random.choice(self.all_rigid_objs, size=1)[0]
-        
-        self.and_preconds = {
-            "grasped": 0, 
-        }
 
-        self.or_preconds = [
-            {
-                self.target_obj: "top_drawer",
-                "top_drawer": "open"
-            },
-            {
-                self.target_obj: "middle_drawer",
-                "middle_drawer": "open",
-                "top_drawer": "closed"
-            },
-        ]
-        self.post_conds = {
-            "grasped": self.target_obj
-        }
-
-    def check_preconditions(self, state):
-        first_check = super().check_preconditions(state)
-        if not first_check:
-            # check that there's no other block on top 
-            if state[self.target_obj] == 'floor' and state['grasped'] == 0:
-                for other_obj in self.all_rigid_objs:
-                    if other_obj != self.target_obj and state[other_obj] == self.target_obj:
-                        return False
-                return True
-
-        return False
-        
-
-    def update_state(self, state):
-        state = super().update_state(state)
-        for other_block in self.all_rigid_objs:
-            if other_block != self.target_obj and state[self.target_obj] == other_block:
-                state[self.target_obj + "_lifted"] = 1
-        return state
-    
-
-    def __str__(self):
-        return "grasp_" + self.target_obj
-
-
-class GraspArticulated(LiberoTask):
-
-    def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
-        super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
-
-        if not target_obj:
-            self.target_obj = np.random.choice(self.all_art_objs, size=1)[0]
-
-        self.and_preconds = {
-            "grasped": 0, 
-        }
-
-        self.or_preconds = []
-        self.post_conds = {
-            "grasped": self.target_obj
-        }
-
-    def __str__(self):
-        return "grasp_" + self.target_obj
-
-
-class Ungrasp(LiberoTask):
-
-    def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
-        super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
-
-        self.and_preconds = {}
-        self.or_preconds = [
-            {"grasped": obj} for obj in self.all_objs
-        ]
-        self.post_conds = {
-            "grasped": 0,
-        }
-        for obj in self.all_rigid_objs:
-            self.post_conds[obj + "_lifted"] = 0
-
-    def check_preconditions(self, state):
-        for obj in self.all_objs:
-            if state['grasped'] == obj:
-                self.target_obj = obj
-                return True
-        return False
-
-    def update_state(self, state):
-        for obj in self.all_objs:
-            if state['grasped'] == obj:
-                state['grasped'] = 0
-                self.target_obj = obj
-                if obj in self.all_rigid_objs:
-                    state[obj + "_lifted"] = 0
-                return state
-
-    def __str__(self):
-        return "ungrasp_" + "object"
-
-
-class PlaceGraspedObjOver(LiberoTask):
-
-    def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
-        super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
         if not self.target_loc:
             self.target_loc = np.random.choice(self.all_locations, size=1)[0]
         
     def check_preconditions(self, state):
-        for obj in self.all_rigid_objs:
-            if state[obj + "_lifted"] == 1 and obj != self.target_loc and state[obj] != self.target_loc:
-                if self.target_loc in ["plate", "black_bowl"]:
-                    if state[self.target_loc] in ["floor", "cabinet_top"]:
-                        return True
-                elif self.target_loc == "top_drawer":
-                    if state['top_drawer'] == 'open':
-                        return True
-                elif self.target_loc == "middle_drawer":
-                    if state['top_drawer'] == 'closed' and state['middle_drawer'] == 'open':
-                        return True
-                elif self.target_loc == 'cabinet_top':
+        if self.target_obj != self.target_loc and state[self.target_obj] != self.target_loc:
+            if self.target_loc in ["plate", "black_bowl"]:
+                if state[self.target_loc] in ["floor", "cabinet_top"]:
                     return True
-                else:
-                    raise Exception("Unknown placement location!")
+            elif self.target_loc == "top_drawer":
+                if state['top_drawer'] == 'open':
+                    return True
+            elif self.target_loc == "middle_drawer":
+                if state['top_drawer'] == 'closed' and state['middle_drawer'] == 'open':
+                    return True
+            elif self.target_loc == 'cabinet_top':
+                if all([state[obj] != "cabinet_top" for obj in self.all_rigid_objs]):
+                    return True
+            else:
+                raise Exception("Unknown placement location!")
         return False
 
     def update_state(self, state):
         for obj in self.all_rigid_objs:
-            if state[obj + "_lifted"] == 1:
-                state[obj] = self.target_loc
-                return state
+            state[obj] = self.target_loc
+            return state
 
     def __str__(self):
-        return "place_grasped_obj_over_" + self.target_loc
+        return "place_" + self.target_obj +  "_on_" + self.target_loc
 
 
-class LiftGraspedObj(LiberoTask):
-
-    def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
-        super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
-        # Just go over state, check if a block is grasped, then check if it is lifted.
-        # That's it.
-
-    def check_preconditions(self, state):
-        for obj in self.all_rigid_objs:
-            if state['grasped'] == obj and state[obj + "_lifted"] == 0:
-                return True
-        return False
-    
-    def update_state(self, state):
-        for obj in self.all_rigid_objs:
-            if state['grasped'] == obj and state[obj + "_lifted"] == 0:
-                state[obj + "_lifted"] = 1
-                return state
-            
-    def __str__(self):
-        return "lift_grasped_obj"
-
-
-class MoveDrawer(LiberoTask):
+class OpenCloseDrawer(LiberoTask):
 
     def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
         super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
@@ -262,7 +133,7 @@ class MoveDrawer(LiberoTask):
             self.target_obj = np.random.choice(["top_drawer", "middle_drawer"], size=1)[0]
 
     def check_preconditions(self, state):
-        if state[self.target_obj] == self.direction or state["grasped"] != self.target_obj:
+        if state[self.target_obj] == self.direction:
             return False
         return True
 
@@ -283,8 +154,8 @@ def get_sequences_for_state2(args):
     np.random.seed(i)
     seq_len = 5
     results = []
-    # PlaceGraspedBlockOver for task diversity
-    all_tasks = [GraspRigid, GraspArticulated, Ungrasp, PlaceGraspedObjOver, PlaceGraspedObjOver, LiftGraspedObj, MoveDrawer, MoveDrawer]
+    
+    all_tasks = [PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, OpenCloseDrawer, OpenCloseDrawer, OpenCloseDrawer]
     all_rigid_objs = ["black_bowl", "ketchup"]
     all_articulated_objects = ["top_drawer", "middle_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
@@ -296,8 +167,6 @@ def get_sequences_for_state2(args):
         
         if check_sequence(state, seq):
             new_seq = tuple([str(task) for task in seq])
-            if 'place_grasped_block_over_table' in new_seq:
-                print(new_seq)
             results.append(new_seq)
     return results
 
@@ -323,6 +192,7 @@ def check_sequence(state, seq, log_res=False):
 
 @functools.lru_cache
 def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
+
     # An object is never in a drawer initially.
     possible_conditions = {
         "top_drawer": ["closed", "open"],
@@ -388,7 +258,7 @@ def generate_pyhash_seeds():
 
 if __name__ == "__main__":
     print("getting sequences")
-    results = get_low_level_random_sequences(400)
+    results = get_low_level_random_sequences(1000)
     high_level_counter = Counter()
     low_level_counter = Counter()
     print("printing res")
