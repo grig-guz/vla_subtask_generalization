@@ -127,7 +127,6 @@ class BDDLBaseDomain(SingleArmEnv):
         self._arena_type = arena_type
         self._arena_xml = os.path.join(self.custom_asset_dir, scene_xml)
         self._arena_properties = scene_properties
-
         super().__init__(
             robots=robots,
             env_configuration=env_configuration,

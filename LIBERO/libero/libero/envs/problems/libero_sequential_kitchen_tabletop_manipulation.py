@@ -39,7 +39,7 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
                     }
                 }
             )
-
+        
         super().__init__(bddl_file_name, *args, **kwargs)
 
     def _load_fixtures_in_arena(self, mujoco_arena):

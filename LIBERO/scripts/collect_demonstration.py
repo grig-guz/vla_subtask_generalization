@@ -253,8 +253,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--bddl-file", type=str)
 
-    parser.add_argument("--vendor-id", type=int, default=9583)
-    parser.add_argument("--product-id", type=int, default=50734)
+    parser.add_argument("--vendor-id", type=int, default=0x256f)
+    parser.add_argument("--product-id", type=int, default=0xc635)
 
     args = parser.parse_args()
 
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 
     # Create argument configuration
     config = {
-        "robots": args.robots,
+        "robots": [args.robots],
         "controller_configs": controller_config,
     }
 
@@ -278,6 +278,9 @@ if __name__ == "__main__":
     if "TwoArm" in problem_name:
         config["env_configuration"] = args.config
     print(language_instruction)
+    print(args.robots)
+
+    print(config)
     env = TASK_MAPPING[problem_name](
         bddl_file_name=args.bddl_file,
         **config,
