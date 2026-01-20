@@ -307,8 +307,8 @@ def process_libero(args):
                         np.concatenate([obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"]])
                     )
                     actions.append(act)
-                    static_images.append(obs["agentview_image"][::-1])
-                    gripper_images.append(obs["robot0_eye_in_hand_image"][::-1])
+                    static_images.append(obs["agentview_image"][::-1, ::-1])
+                    gripper_images.append(obs["robot0_eye_in_hand_image"][::-1, ::-1])
 
                     obs, reward, done, info = env.step(act.tolist())
                     if info['subgoal_completed']:
