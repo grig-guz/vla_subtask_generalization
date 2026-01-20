@@ -15,13 +15,11 @@ from libero.libero.envs import OffScreenRenderEnv
 from utils.shared_utils import get_libero_dummy_action, is_noop, quat2axisangle
 from libero.libero.envs.bddl_base_domain import TASK_MAPPING
 
-
 task_ids_per_suite = {
-    #'libero_10': [0, 1, 2, 7, 9],
-    #'libero_90': [21]
-    'libero_single': [0, 1, 2, 3, 4]
+    'libero_10': [0, 1, 2, 7, 9],
+    'libero_90': [21]
+    #'libero_single': [0, 1, 2, 3, 4]
 }
-
 
 TEMPLATES = {
     "turnon":"turn on the {0}",  
@@ -142,14 +140,10 @@ def object_nice_name(raw):
         return 'microwave'
     return raw.replace('_', ' ').strip()
 
-
-
 def instr_for_atom(op, args):
     tpl = TEMPLATES.get(op, None)
     words = [object_nice_name(a) for a in args]
     return tpl.format(*words) if tpl else " ".join(words)
-
-
 
 def load_goal_atoms(bddl_file: Path):
     problem = robosuite_parse_problem(str(bddl_file))
@@ -234,6 +228,10 @@ def get_libero_evaluators(env, full_path):
     return evaluators
 """
 
+old_libero_bddl_map = {
+
+}
+
 def process_libero(args):
 
     trajs_per_task = 50
@@ -307,8 +305,8 @@ def process_libero(args):
                         np.concatenate([obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"]])
                     )
                     actions.append(act)
-                    static_images.append(obs["agentview_image"][::-1])
-                    gripper_images.append(obs["robot0_eye_in_hand_image"][::-1])
+                    static_images.append(obs["agentview_image"][::-1, ::-1])
+                    gripper_images.append(obs["robot0_eye_in_hand_image"][::-1, ::-1])
 
                     obs, reward, done, info = env.step(act.tolist())
                     if info['subgoal_completed']:
@@ -402,12 +400,10 @@ def process_libero(args):
 
 
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_store_path", type=str, default="/ubc/cs/research/ubc_ml/gguz/datasets/libero_new_pickle")
-    parser.add_argument("--video_store_path", type=str, default=None)
+    parser.add_argument("--data_store_path", type=str, default="/home/gguz/scratch/datasets")
+    parser.add_argument("--video_store_path", type=str, default="/home/gguz/scratch/results/videos_seg")
     parser.add_argument("--save_dataset", type=bool, default=True)
     args = parser.parse_args()
     process_libero(args)
