@@ -105,10 +105,16 @@ class GraspRigid(LiberoTask):
                 "top_drawer": "open"
             },
             {
-                self.target_obj: "middle_drawer",
-                "middle_drawer": "open",
-                "top_drawer": "closed"
-            },
+                self.target_obj: "floor"
+            }, 
+            {
+                self.target_obj: "cabinet_top"
+            }
+            #{
+            #    self.target_obj: "middle_drawer",
+            #    "middle_drawer": "open",
+            #    "top_drawer": "closed"
+            #},
         ]
         self.post_conds = {
             "grasped": self.target_obj
@@ -116,13 +122,13 @@ class GraspRigid(LiberoTask):
 
     def check_preconditions(self, state):
         first_check = super().check_preconditions(state)
-        if not first_check:
-            # check that there's no other block on top 
-            if state[self.target_obj] == 'floor' and state['grasped'] == 0:
-                for other_obj in self.all_rigid_objs:
-                    if other_obj != self.target_obj and state[other_obj] == self.target_obj:
-                        return False
-                return True
+
+        if first_check:
+            # check that there's no other objects on top 
+            for other_obj in self.all_rigid_objs:
+                if other_obj != self.target_obj and state[other_obj] == self.target_obj:
+                    return False
+            return True
 
         return False
         
@@ -174,25 +180,21 @@ class Ungrasp(LiberoTask):
         }
         for obj in self.all_rigid_objs:
             self.post_conds[obj + "_lifted"] = 0
+            
+        if not target_obj:
+            self.target_obj = np.random.choice(self.all_objs, size=1)[0]
 
     def check_preconditions(self, state):
-        for obj in self.all_objs:
-            if state['grasped'] == obj:
-                self.target_obj = obj
-                return True
-        return False
+        return state['grasped'] == self.target_obj
 
     def update_state(self, state):
-        for obj in self.all_objs:
-            if state['grasped'] == obj:
-                state['grasped'] = 0
-                self.target_obj = obj
-                if obj in self.all_rigid_objs:
-                    state[obj + "_lifted"] = 0
-                return state
+        state['grasped'] = 0
+        for obj in self.all_rigid_objs:
+            state[obj + "_lifted"] = 0
+        return state
 
     def __str__(self):
-        return "ungrasp_" + "object"
+        return "ungrasp_" + self.target_obj
 
 
 class PlaceGraspedObjOver(LiberoTask):
@@ -211,9 +213,9 @@ class PlaceGraspedObjOver(LiberoTask):
                 elif self.target_loc == "top_drawer":
                     if state['top_drawer'] == 'open':
                         return True
-                elif self.target_loc == "middle_drawer":
-                    if state['top_drawer'] == 'closed' and state['middle_drawer'] == 'open':
-                        return True
+                #elif self.target_loc == "middle_drawer":
+                #    if state['top_drawer'] == 'closed' and state['middle_drawer'] == 'open':
+                #        return True
                 elif self.target_loc == 'cabinet_top':
                     return True
                 else:
@@ -259,7 +261,7 @@ class MoveDrawer(LiberoTask):
         super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
         self.direction = np.random.choice(["open", "closed"], size=1)[0]
         if target_obj == None:
-            self.target_obj = np.random.choice(["top_drawer", "middle_drawer"], size=1)[0]
+            self.target_obj = np.random.choice(["top_drawer"], size=1)[0]
 
     def check_preconditions(self, state):
         if state[self.target_obj] == self.direction or state["grasped"] != self.target_obj:
@@ -286,9 +288,9 @@ def get_sequences_for_state2(args):
     # PlaceGraspedBlockOver for task diversity
     all_tasks = [GraspRigid, GraspArticulated, Ungrasp, PlaceGraspedObjOver, PlaceGraspedObjOver, LiftGraspedObj, MoveDrawer, MoveDrawer]
     all_rigid_objs = ["black_bowl", "ketchup"]
-    all_articulated_objects = ["top_drawer", "middle_drawer"]
+    all_articulated_objects = ["top_drawer"]#, "middle_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
-    all_locations = ["cabinet_top", "top_drawer", "middle_drawer", "plate", "black_bowl"]
+    all_locations = ["cabinet_top", "top_drawer", "plate", "black_bowl"]#, "middle_drawer"]
 
     while len(results) < num_sequences:
         seq = np.random.choice(all_tasks, size=seq_len, replace=False)
@@ -326,7 +328,7 @@ def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
     # An object is never in a drawer initially.
     possible_conditions = {
         "top_drawer": ["closed", "open"],
-        "middle_drawer": ["closed", "open"],
+        #"middle_drawer": ["closed", "open"],
         "black_bowl": ["floor"],
         "plate": ["floor"],
         "ketchup": ["floor"],

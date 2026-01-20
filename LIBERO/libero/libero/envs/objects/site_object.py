@@ -55,6 +55,28 @@ class SiteObject:
         # print(lb, other_position, ub)
         return np.all(other_position > lb) and np.all(other_position < ub)
 
+    def over(self, this_position, this_mat, other_position):
+        """
+        Checks whether the object is contained within this SiteObject.
+        Useful for when the CompositeObject has holes and the object should
+        be within one of the holes. Makes an approximation by treating the
+        object as a point, and the SiteObject as an axis-aligned grid.
+        Args:
+            this_position: 3D position of this SiteObject
+            other_position: 3D position of object to test for insertion
+        """
+
+        total_size = np.abs(this_mat @ self.size)
+
+        ub = this_position + total_size
+        lb = this_position - total_size
+
+        lb[2] -= 0.01
+        # print(np.all(other_position > lb), np.all(other_position < ub))
+        # print(lb, other_position, ub)
+        return np.all(other_position[:2] > lb[:2]) and np.all(other_position[:2] < ub[:2]) and other_position[2] > ub[2]
+
+
     def __str__(self):
         return (
             f"Object {self.name} : \n geom type: {self.site_type} \n size: {self.size}"
@@ -73,8 +95,9 @@ class SiteObject:
         total_size = self.size  # np.abs(this_mat @ self.size)
 
         delta_position = this_mat @ (other_position - this_position)
-        # print(total_size, " | ", delta_position)
+
         # print(total_size[2] < delta_position[2] < total_size[2] + other_height, np.all(np.abs(delta_position[:2]) < total_size[:2]))
+    
         return total_size[2] - 0.005 < delta_position[2] < total_size[
             2
         ] + other_height and np.all(np.abs(delta_position[:2]) < total_size[:2])

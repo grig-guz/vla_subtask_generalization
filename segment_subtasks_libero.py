@@ -263,11 +263,8 @@ def process_libero(args):
                 "camera_widths": resolution
             }
             env     = OffScreenRenderEnv(**env_args)
-            #evaluators = get_libero_evaluators(env, full_path)
-            #print(evaluators)
             for traj_id in range(trajs_per_task):
                 traj      = data_file["data"][f"demo_{traj_id}"]           
-                #active    = [False]*len(evaluators)
 
                 start_idx = 0  # index where the *next* segment starts
                 orig_actions = traj['actions']
@@ -317,11 +314,6 @@ def process_libero(args):
                         current_subgoal_instruction = obs['subgoal_language']
                     if done:
                         break
-                    #for i, ev in enumerate(evaluators):
-                    #    if not active[i] and ev():
-                    #        segments.append((i, start_idx, t_step_passed))
-                    #        active[i] = True
-                    #        start_idx = t_step_passed
 
                     t_step_passed += 1
 
