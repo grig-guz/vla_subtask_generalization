@@ -26,15 +26,17 @@ from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 import tensorflow_datasets as tfds
 import tyro
 
-REPO_NAMES = ["libero_high_level", 
+REPO_NAMES = ["calvin_high_level", 
+              "calvin_conj", 
+              "calvin_low_level",
+              "libero_high_level", 
               "libero_conj", 
               "libero_low_level",
-              "calvin_high_level", 
-              "calvin_conj", 
-              "calvin_low_level"]
+              ]
 
 
 def main(data_dir: str, *, push_to_hub: bool = False):
+    print("hello")
     for REPO_NAME in REPO_NAMES:
 
         # Create LeRobot dataset, define features to store

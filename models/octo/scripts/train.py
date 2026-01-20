@@ -329,7 +329,7 @@ def main(_):
                     rollout_metrics = rollout_callback(train_state, i + 1)
                     wandb_log(rollout_metrics, step=i + 1)
 
-        timer.tock("total")
+        #timer.tock("total")
         if (i + 1) % FLAGS.config.log_interval == 0:
             update_info = jax.device_get(update_info)
             wandb_log(

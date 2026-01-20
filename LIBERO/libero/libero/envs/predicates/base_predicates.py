@@ -47,7 +47,7 @@ class FalsePredicateFn(MultiarayAtomic):
 
     def __call__(self, *args):
         return False
-
+    
 
 class InContactPredicateFn(BinaryAtomic):
     def __call__(self, arg1, arg2):
@@ -78,7 +78,7 @@ class On(BinaryAtomic):
 
 class Up(BinaryAtomic):
     def __call__(self, arg1):
-        return arg1.get_geom_state()["pos"][2] >= 1.0
+        return arg1.lifted()
 
 class Grasped(UnaryAtomic):
     def __call__(self, arg1):
@@ -86,15 +86,13 @@ class Grasped(UnaryAtomic):
 
 class Ungrasped(UnaryAtomic):
     def __call__(self, arg1):
-        return not arg1.check_grasped()
+        return arg1.check_ungrasped()
 
 
 class Over(BinaryAtomic):
     def __call__(self, arg1, arg2):
-        return (
-            arg2.check_contain(arg1)
-            and arg1.get_geom_state()["pos"][2] > arg2.get_geom_state()["pos"][2]
-        )
+        print(arg1.object_name, arg2.object_name)
+        return arg2.check_over(arg1)
 
 
 class Stack(BinaryAtomic):

@@ -81,11 +81,10 @@
     (On plate_1 kitchen_table_plate_init_region)
     (On white_cabinet_1 kitchen_table_white_cabinet_init_region)
     (On ketchup_1 kitchen_table_ketchup_init_region)
-    (Open white_cabinet_1_top_region)
   )
 
   (:goal
-    (And (On ketchup_1 plate_1))
+    (And (On akita_black_bowl_1 plate_1))
   )
 
   (:subgoals
