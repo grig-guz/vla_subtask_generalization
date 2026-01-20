@@ -81,24 +81,23 @@
     (On plate_1 kitchen_table_plate_init_region)
     (On white_cabinet_1 kitchen_table_white_cabinet_init_region)
     (On ketchup_1 kitchen_table_ketchup_init_region)
-    (Open white_cabinet_1_top_region)
   )
 
   (:goal
-    (And (On ketchup_1 plate_1))
+    (And (On ketchup_1 akita_black_bowl_1))
   )
 
   (:subgoals
     (And (Grasped ketchup_1))
     (And (Lifted ketchup_1))
-    (And (Over ketchup_1 plate_1))
+    (And (Over ketchup_1 akita_black_bowl_1))
     (And (Ungrasped ketchup_1))
   )
 
   (:subgoal_instructions
     (:subgoal_instruction grasp the ketchup)
     (:subgoal_instruction lift the grasped object)
-    (:subgoal_instruction place the object over the plate)
+    (:subgoal_instruction place the object over the black bowl)
     (:subgoal_instruction ungrasp the object)
   )
 

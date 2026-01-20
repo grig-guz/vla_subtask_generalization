@@ -43,6 +43,23 @@ class ObjectState(BaseObjectState):
         self.has_turnon_affordance = hasattr(
             self.env.get_object(self.object_name), "turn_on"
         )
+        self.subtask_init_pos = None
+
+    def set_init_pos(self):
+        object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
+        self.subtask_init_pos = np.copy(object_pos)
+
+    def check_ungrasped(self):
+        object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
+        return not self.check_grasped() and \
+                np.linalg.norm(self.subtask_init_pos[:2] - object_pos[:2]) < 0.125
+        
+
+    def lifted(self):
+        object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
+        return object_pos[2] - self.subtask_init_pos[2] > 0.05 and \
+                np.linalg.norm(self.subtask_init_pos[:2] - object_pos[:2]) < 0.125
+        
 
     def get_geom_state(self):
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
@@ -57,9 +74,13 @@ class ObjectState(BaseObjectState):
         return self.env.check_contact(object_1, object_2)
 
     def check_grasped(self):
-        object_1 = self.env.get_object(self.object_name)
+        if not isinstance(self.subtask_init_pos, np.ndarray):
+            return False
+
         gripper = self.env.robots[0].gripper
-        return self.env._check_grasp(gripper, object_1)
+        object_1 = self.env.get_object(self.object_name)
+        object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
+        return self.env._check_grasp(gripper, object_1) or object_pos[2] - self.subtask_init_pos[2] > 0.025
 
     def check_contain(self, other):
         object_1 = self.env.get_object(self.object_name)
@@ -97,6 +118,28 @@ class ObjectState(BaseObjectState):
                 < 0.03
             )
         )
+
+                        
+
+    def check_over(self, other):
+        this_object = self.env.get_object(self.object_name)
+        this_object_position = self.env.sim.data.body_xpos[
+            self.env.obj_body_id[self.object_name]
+        ]
+        other_object = self.env.get_object(other.object_name)
+        other_object_position = self.env.sim.data.body_xpos[
+            self.env.obj_body_id[other.object_name]
+        ]
+        
+        return (
+            (this_object_position[2] <= other_object_position[2])
+            and not self.check_contact(other)
+            and (
+                np.linalg.norm(this_object_position[:2] - other_object_position[:2])
+                < 0.04
+            )
+        )
+
 
     def set_joint(self, qpos=1.5):
         for joint in self.env.get_object(self.object_name).joints:
@@ -139,6 +182,7 @@ class ObjectState(BaseObjectState):
             self.turn_on()
 
 
+
 class SiteObjectState(BaseObjectState):
     """
     This is to make site based objects to have the same API as normal Object State.
@@ -167,12 +211,16 @@ class SiteObjectState(BaseObjectState):
         if 'top' in self.object_name:
             body_id = self.env.sim.model.body_name2id('white_cabinet_1_cabinet_top')
         else:
-            body_id = self.env.sim.model.body_name2id('white_cabinet_1_cabinet_bottom')
+            body_id = self.env.sim.model.body_name2id('white_cabinet_1_cabinet_middle')
         geom_ids = np.where(self.env.sim.model.geom_bodyid == body_id)[0]
         geom_names = np.array([self.env.sim.model.geom_id2name(g_id) for g_id in geom_ids])
         
-        #return self.env._check_grasp(gripper, geom_name)
+        #return self.env._check_grasp(gripper, geom_names)
         return self.env.check_contact(gripper, geom_names)
+
+    def check_ungrasped(self):
+        return not self.check_grasped()
+
 
     def check_contain(self, other):
         this_object = self.env.object_sites_dict[self.object_name]
@@ -183,9 +231,26 @@ class SiteObjectState(BaseObjectState):
         other_object_position = self.env.sim.data.body_xpos[
             self.env.obj_body_id[other.object_name]
         ]
+
         return this_object.in_box(
             this_object_position, this_object_mat, other_object_position
         )
+
+    def check_over(self, other):
+        this_object = self.env.object_sites_dict[self.object_name]
+        this_object_position = self.env.sim.data.get_site_xpos(self.object_name)
+        this_object_mat = self.env.sim.data.get_site_xmat(self.object_name)
+
+        other_object = self.env.get_object(other.object_name)
+        other_object_position = self.env.sim.data.body_xpos[
+            self.env.obj_body_id[other.object_name]
+        ]
+        parent_object = self.env.get_object(self.parent_name)
+
+        return this_object.over(
+            this_object_position, this_object_mat, other_object_position
+        ) and not self.env.check_contact(parent_object, other_object)
+
 
     def check_contact(self, other):
         """
@@ -204,7 +269,6 @@ class SiteObjectState(BaseObjectState):
             ]
             # print(self.object_name, this_object_position)
             # print(other_object_position)
-
             parent_object = self.env.get_object(self.parent_name)
             if parent_object is None:
                 return this_object.under(

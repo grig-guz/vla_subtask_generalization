@@ -72,14 +72,17 @@ def collect_human_trajectory(
 
         # If action is none, then this a reset so we should break
         if action is None:
-            print("Break")
             saving = False
             break
 
         # Run environment step
-
-        env.step(action)
+        _, _, done, info = env.step(action)
         env.render()
+        if 'inadmissible_task' in info and info['inadmissible_task'] != None:
+            print(f"Inadmissible task: {info['inadmissible_task']}, terminating the episode!")
+            saving = False
+            break
+
         # Also break if we complete the task
         if task_completion_hold_count == 0:
             break

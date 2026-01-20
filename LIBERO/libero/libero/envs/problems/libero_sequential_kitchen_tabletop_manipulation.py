@@ -134,17 +134,6 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
         """Very simple implementation at the moment. Will need to upgrade for other relations later."""
         super()._add_placement_initializer()
 
-    def _check_success(self):
-        """
-        Check if the goal is achieved. Consider conjunction goals at the moment
-        """
-        goal_state = self.parsed_problem["goal_state"]
-        result = True
-        for state in goal_state:
-            result = self._eval_predicate(state) and result
-        return result
-
-
 
     def _eval_predicate(self, state):
         if len(state) == 3:
