@@ -2,6 +2,7 @@ from robosuite.utils.mjcf_utils import new_site
 
 from libero.libero.envs.bddl_base_domain import register_problem
 from libero.libero.envs.bddl_sequential_base_domain import BDDLSequentialBaseDomain
+
 from libero.libero.envs.robots import *
 from libero.libero.envs.objects import *
 from libero.libero.envs.predicates import *
@@ -10,42 +11,42 @@ from libero.libero.envs.utils import rectangle2xyrange
 
 
 @register_problem
-class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
+class Libero_Sequential_Living_Room_Tabletop_Manipulation(BDDLSequentialBaseDomain):
     def __init__(self, bddl_file_name, *args, **kwargs):
-        self.workspace_name = "kitchen_table"
+        self.workspace_name = "living_room_table"
         self.visualization_sites_list = []
-        if "table_full_size" in kwargs:
-            self.kitchen_table_full_size = table_full_size
+        if "living_room_table_full_size" in kwargs:
+            self.living_room_table_full_size = living_room_table_full_size
         else:
-            self.kitchen_table_full_size = (1.0, 1.2, 0.05)
-        self.kitchen_table_offset = (0.0, 0, 0.90)
+            self.living_room_table_full_size = (0.70, 1.6, 0.024)
+        self.living_room_table_offset = (0, 0, 0.41)
         # For z offset of environment fixtures
-        self.z_offset = 0.01 - self.kitchen_table_full_size[2]
+        self.z_offset = 0.01 - self.living_room_table_full_size[2]
         kwargs.update(
-            {"robots": [f"Mounted{robot_name}" for robot_name in kwargs["robots"]]}
+            {"robots": [f"OnTheGround{robot_name}" for robot_name in kwargs["robots"]]}
         )
-        kwargs.update({"workspace_offset": self.kitchen_table_offset})
-        kwargs.update({"arena_type": "kitchen"})
+        kwargs.update({"workspace_offset": self.living_room_table_offset})
+        kwargs.update({"arena_type": "living_room"})
         if "scene_xml" not in kwargs or kwargs["scene_xml"] is None:
             kwargs.update(
-                {"scene_xml": "scenes/libero_kitchen_tabletop_base_style.xml"}
+                {"scene_xml": "scenes/libero_living_room_tabletop_base_style.xml"}
             )
         if "scene_properties" not in kwargs or kwargs["scene_properties"] is None:
             kwargs.update(
                 {
                     "scene_properties": {
-                        "floor_style": "gray-ceramic",
-                        "wall_style": "yellow-linen",
+                        "floor_style": "wood-plank",
+                        "wall_style": "light-gray-plaster",
                     }
                 }
             )
-        
+
         super().__init__(bddl_file_name, *args, **kwargs)
 
     def _load_fixtures_in_arena(self, mujoco_arena):
         """Nothing extra to load in this simple problem."""
         for fixture_category in list(self.parsed_problem["fixtures"].keys()):
-            if fixture_category == "kitchen_table":
+            if fixture_category == "living_room_table":
                 continue
             for fixture_instance in self.parsed_problem["fixtures"][fixture_category]:
                 self.fixtures_dict[fixture_instance] = get_object_fn(fixture_category)(
@@ -67,7 +68,7 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
         region_dict = self.parsed_problem["regions"]
         for object_region_name in list(region_dict.keys()):
 
-            if "kitchen_table" in object_region_name:
+            if "living_room_table" in object_region_name:
                 ranges = region_dict[object_region_name]["ranges"][0]
                 assert ranges[2] >= ranges[0] and ranges[3] >= ranges[1]
                 zone_size = ((ranges[2] - ranges[0]) / 2, (ranges[3] - ranges[1]) / 2)
@@ -83,10 +84,10 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
                     zone_centroid_xy=zone_centroid_xy,
                 )
                 object_sites_dict[object_region_name] = target_zone
-                mujoco_arena.table_body.append(
+                mujoco_arena.living_room_table_body.append(
                     new_site(
                         name=target_zone.name,
-                        pos=target_zone.pos + np.array([0.0, 0.0, -0.90]),
+                        pos=target_zone.pos,
                         quat=target_zone.quat,
                         rgba=target_zone.rgba,
                         size=target_zone.size,
@@ -143,7 +144,7 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
             object_2_name = state[2]
             if predicate_fn_name == 'and':
                 return self._eval_predicate(state[1]) and self._eval_predicate(state[2])
-                
+
             return eval_predicate_fn(
                 predicate_fn_name,
                 self.object_states_dict[object_1_name],
@@ -161,7 +162,6 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
                 return eval_predicate_fn(
                     predicate_fn_name, self.object_states_dict[object_name]
                 )
-
 
     def _setup_references(self):
         super()._setup_references()
@@ -185,22 +185,22 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
                     self.sim.model.site_rgba[vis_g_id][3] = (
                         1 - self.sim.model.site_rgba[vis_g_id][3]
                     )
-        
+
     def _setup_camera(self, mujoco_arena):
         mujoco_arena.set_camera(
             camera_name="agentview",
-            pos=[0.6586131746834771, 0.0, 1.6103500240372423],
+            pos=[0.6065773716836134, 0.0, 0.96],
             quat=[
-                0.6380177736282349,
-                0.3048497438430786,
-                0.30484986305236816,
-                0.6380177736282349,
+                0.6182166934013367,
+                0.3432307541370392,
+                0.3432314395904541,
+                0.6182177066802979,
             ],
         )
 
         # For visualization purpose
         mujoco_arena.set_camera(
-            camera_name="frontview", pos=[1.0, 0.0, 1.48], quat=[0.56, 0.43, 0.43, 0.56]
+            camera_name="frontview", pos=[1.5, 0.0, 0.9], quat=[0.56, 0.43, 0.43, 0.56]
         )
         mujoco_arena.set_camera(
             camera_name="galleryview",
@@ -214,6 +214,6 @@ class Libero_Sequential_Kitchen_Tabletop_Manipulation(BDDLSequentialBaseDomain):
         )
         mujoco_arena.set_camera(
             camera_name="paperview",
-            pos=[2.1, 0.535, 2.075],
+            pos=[2.1, 0.735, 1.875],
             quat=[0.513, 0.353, 0.443, 0.645],
         )

@@ -44,10 +44,15 @@ class ObjectState(BaseObjectState):
             self.env.get_object(self.object_name), "turn_on"
         )
         self.subtask_init_pos = None
+        self.is_grasped_init = None
+        self.is_turned_on_init = None
 
     def set_init_pos(self):
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
         self.subtask_init_pos = np.copy(object_pos)
+        self.is_grasped_init = self.check_grasped_state()
+        if self.has_turnon_affordance:
+            self.is_turned_on_init = self.turn_on_state()
 
     def check_ungrasped(self):
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
@@ -74,8 +79,14 @@ class ObjectState(BaseObjectState):
         return self.env.check_contact(object_1, object_2)
 
     def check_grasped(self):
-        if not isinstance(self.subtask_init_pos, np.ndarray):
+        #print(f"Checking grasped for object {self.object_name}, grasped before: {self.is_grasped_init}, type?: {type(self.is_grasped_init)}")
+        if not (isinstance(self.is_grasped_init, bool) or isinstance(self.is_grasped_init, np.bool)):
             return False
+
+        #print(f"Object {self.object_name}, grasped before: {self.is_grasped_init}, after: {self.check_grasped_state()}")
+        return not self.is_grasped_init and self.check_grasped_state()
+
+    def check_grasped_state(self):
 
         gripper = self.env.robots[0].gripper
         object_1 = self.env.get_object(self.object_name)
@@ -161,7 +172,15 @@ class ObjectState(BaseObjectState):
                 return False
         return True
 
+        
     def turn_on(self):
+        
+        if self.is_turned_on_init == None:
+            return self.turn_on_state()
+        
+        return self.is_turned_on_init == False and self.turn_on_state()
+
+    def turn_on_state(self):
         for joint in self.env.get_object(self.object_name).joints:
             qpos_addr = self.env.sim.model.get_joint_qpos_addr(joint)
             qpos = self.env.sim.data.qpos[qpos_addr]

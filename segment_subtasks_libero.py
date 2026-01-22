@@ -16,20 +16,9 @@ from utils.shared_utils import get_libero_dummy_action, is_noop, quat2axisangle
 from libero.libero.envs.bddl_base_domain import TASK_MAPPING
 
 task_ids_per_suite = {
-    'libero_10': [0, 1, 2, 7, 9],
-    'libero_90': [21]
+    'libero_10': [9, 0, 1, 2, 7],
+    'libero_90': [21],
     #'libero_single': [0, 1, 2, 3, 4]
-}
-
-TEMPLATES = {
-    "turnon":"turn on the {0}",  
-    "TurnOff":"turn off the {0}",
-    "Open":"open the {0}",       
-    "Close":"close the {0}",
-    "on":"put the {0} on the {1}",
-    "In":"put the {0} in the {1}",
-    "Stack":"stack the {0} on the {1}",
-    "in":"put the {0} in the {1}"
 }
 
 standard_to_low = {
@@ -95,142 +84,15 @@ standard_to_high = {
 }
 
 standard_to_conj = {
-    'put both the alphabet soup and the tomato sauce in the basket': 'put the alphabet soup in the basket and put the tomato sauce in the basket',
-    'put both the alphabet soup and the cream cheese box in the basket': 'put the alphabet soup in the basket and put the cream cheese box in the basket',
-    'put the yellow and white mug in the microwave and close it': 'put the yellow and white mug in the microwave and close the microwave',
-    'turn on the stove and put the moka pot on it': 'turn on the stove and put the moka pot on the stove',
-    "put the black bowl in the bottom drawer of the cabinet and close it": "put the black bowl in the bottom drawer of the cabinet and close the bottom drawer of the cabinet",
-    'put both the cream cheese box and the butter in the basket': 'put the cream cheese box in the basket and put the butter in the basket',
-    'turn on the stove and put the frying pan on it': 'turn on the stove and put the frying pan on the stove'
+    'put both the alphabet soup and the tomato sauce in the basket': 'put the alphabet soup in the basket, then put the tomato sauce in the basket',
+    'put both the alphabet soup and the cream cheese box in the basket': 'put the alphabet soup in the basket, then put the cream cheese box in the basket',
+    'put the yellow and white mug in the microwave and close it': 'put the yellow and white mug in the microwave, then close the microwave',
+    'turn on the stove and put the moka pot on it': 'turn on the stove, then put the moka pot on the stove',
+    "put the black bowl in the bottom drawer of the cabinet and close it": "put the black bowl in the bottom drawer of the cabinet, then close the bottom drawer of the cabinet",
+    'put both the cream cheese box and the butter in the basket': 'put the cream cheese box in the basket, then put the butter in the basket',
+    'turn on the stove and put the frying pan on it': 'turn on the stove, then put the frying pan on the stove'
 }
 
-"""
-def object_nice_name(raw):
-    if raw in ['flat_stove_1', 'flat_stove_1_cook_region']:
-        return 'stove'
-    elif raw == 'moka_pot_1':
-        return 'moka pot'
-    elif raw == 'akita_black_bowl_1':
-        return 'black bowl'
-    elif raw == 'white_cabinet_1_bottom_region':
-        return 'bottom drawer of the cabinet'
-    elif raw == 'porcelain_mug_1':
-        return 'white mug'
-    elif raw == 'white_yellow_mug_1':
-        return 'yellow and white mug'
-    elif raw == 'plate_1':
-        return 'left plate'
-    elif raw == 'plate_2':
-        return 'right plate'
-    elif raw == 'chocolate_pudding_1':
-        return 'chocolate pudding'
-    elif raw == 'alphabet_soup_1':
-        return 'alphabet soup'
-    elif raw == 'cream_cheese_1':
-        return 'cream cheese'
-    elif raw == 'basket_1_contain_region':
-        return 'basket'
-    elif raw == 'desk_caddy_1_back_contain_region':
-        return 'back compartment of the caddy'
-    elif raw == 'black_book_1':
-        return 'book'
-    elif raw == 'living_room_table_plate_right_region':
-        return 'to the right of the plate'
-    elif raw == 'microwave_1_heating_region':
-        return 'microwave'
-    return raw.replace('_', ' ').strip()
-
-def instr_for_atom(op, args):
-    tpl = TEMPLATES.get(op, None)
-    words = [object_nice_name(a) for a in args]
-    return tpl.format(*words) if tpl else " ".join(words)
-
-def load_goal_atoms(bddl_file: Path):
-    problem = robosuite_parse_problem(str(bddl_file))
-    # problem["goal_state"] is a list of S-expr tokens representing the whole (And …) clause
-    # we only care about each top-level child
-    atoms = []
-    
-    for expr in problem["goal_state"]:     # skip the initial 'And'
-        op, *args = expr
-        atoms.append((op, args))                  # e.g. ('Turnon', ['flat_stove_1'])
-    atoms = atoms[:2]
-    return atoms
-
-def get_sim_obj(domain, name, require=()):
-    #Return the wrapper whose *attribute set* satisfies the predicate's needs.
-
-    candidate_tables = [
-        getattr(domain, a) for a in dir(domain)
-        if (a.endswith("_dict") or a.endswith("_table"))
-           and isinstance(getattr(domain, a), dict)
-    ]
-
-    preferred = ["region", "contain", "fixture", "object_site", "object"]
-    candidate_tables.sort(
-        key=lambda tbl: min((preferred.index(k)
-                             for k in preferred if k in tbl.__repr__()),
-                            default=len(preferred)))
-
-    for tbl in candidate_tables:
-        obj = tbl.get(name)
-        if obj is not None and all(hasattr(obj, m) for m in require):
-            return obj
-
-    need = ", ".join(require) or "—"
-    raise KeyError(f"'{name}' with methods [{need}] not found in any *_dict/_table")
-
-
-def get_libero_evaluators(env, full_path):
-        #For a given HL task (specified by full_path to the HL task BDDL file),
-        #extract the evaluator predicates for constituent subtasks.
-        #For example: 
-        #    "turn on the stove and put the pan on it" = TurnOn(stove) and IsClose(pan, stove)
-        #    -> We extract  TurnOn(stove), IsClose(pan, stove) as separate evaluators
-    dom   = env.env           
-    pred_module = importlib.import_module(
-                    "libero.libero.envs.predicates.base_predicates")
-    atoms   = load_goal_atoms(full_path)   
-    evaluators = []
-
-    name_map = {                           # BDDL token  ->  class name
-        "turnon": "TurnOn",
-        "turnoff": "TurnOff",
-        "open": "Open",
-        "close": "Close",
-        "on": "On",
-        "in": "In",
-    }
-
-    needs = {
-        "On"   : (("check_contact", "check_ontop"),              1),
-        "In"   : (("check_contain",),                            1), 
-        "Close": (("is_close",),                                 0),
-        "Open" : (("is_close",),                                 0),
-    }
-
-    for op, names in atoms:               # e.g. ('On', ['moka', 'stove_region'])
-        cls_name   = name_map[op]
-        # Class 
-        pred_cls   = getattr(pred_module, cls_name)
-
-        # TODO: In needs, why is_close = 0 for both Close and Open?
-        req, tgt = needs.get(cls_name, ((), None))
-
-        objs = []
-        for arg_idx, name in enumerate(names):
-            must_have = req if arg_idx == tgt else ()
-
-            objs.append(get_sim_obj(dom, name, require=must_have))
-
-        predicate  = pred_cls()
-        evaluators.append(lambda p=predicate, o=objs: p(*o))
-    return evaluators
-"""
-
-old_libero_bddl_map = {
-
-}
 
 def process_libero(args):
 
@@ -252,16 +114,17 @@ def process_libero(args):
         for task_id in task_ids_per_suite[suite_name]:
 
             task = suite.get_task(task_id)
-            data_file = h5py.File(os.path.join(datasets_default_path, suite.get_task_demonstration(task_id)), 
-                                  "r") 
+            data_file = h5py.File(os.path.join("/home/gguz/scratch/datasets", suite.get_task_demonstration(task_id)), "r")
             
-            full_path = "/ubc/cs/research/nlp/grigorii/projects/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/" + task.problem_folder + "/" + task.bddl_file
+            full_path = args.bddl_files_path + "/libero_high_level_hard/" + task.bddl_file
             print("Full path: ", full_path)
+
             env_args = {
                 "bddl_file_name": full_path, 
                 "camera_heights": resolution, 
                 "camera_widths": resolution
             }
+
             env     = OffScreenRenderEnv(**env_args)
             for traj_id in range(trajs_per_task):
                 traj      = data_file["data"][f"demo_{traj_id}"]           
@@ -394,10 +257,12 @@ def process_libero(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--bddl_files_path", type=str, default="/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/")
     parser.add_argument("--data_store_path", type=str, default="/home/gguz/scratch/datasets")
     parser.add_argument("--video_store_path", type=str, default="/home/gguz/scratch/results/videos_seg")
     parser.add_argument("--save_dataset", type=bool, default=True)
     args = parser.parse_args()
+    print("Begin processing!")
     process_libero(args)
 
 

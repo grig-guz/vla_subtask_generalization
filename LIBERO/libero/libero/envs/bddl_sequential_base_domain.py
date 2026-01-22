@@ -67,9 +67,53 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             "put_ketchup_on_plate": ["grasp_bowl", "grasp_top_drawer"], 
             "put_ketchup_on_bowl": ["grasp_bowl", "grasp_top_drawer"], 
             "put_bowl_on_cabinet": ["grasp_ketchup", "grasp_top_drawer", "grasp_top_drawer"], 
+
+            # Old experiment
+            "turn_on_stove_3": ["grasp_pan", "grasp_moka_pot"],
+            "put_pan_on_stove_3": ["grasp_moka_pot", "turn_on_stove_3"],
+            "put_moka_pot_on_stove_3": ["grasp_pan", "turn_on_stove_3"],
+
+            "put_yellow_white_mug_in_microwave_6": ["grasp_porcelain_mug", "close_microwave_6"],
+            "close_microwave_6": ["grasp_porcelain_mug", "grasp_yellow_white_mug"],
+
+            "put_right_moka_pot_on_stove_8": ["grasp_left_moka_pot"],
+            "put_left_moka_pot_on_stove_8": ["grasp_moka_pot"],
+
+            "put_alphabet_soup_in_basket_1": ["grasp_cream_cheese", "grasp_tomato_sauce", "grasp_ketchup"],
+            "put_cream_cheese_in_basket_1": ["grasp_alphabet_soup", "grasp_tomato_sauce", "grasp_ketchup"],
+
+            "put_alphabet_soup_in_basket_2": ["grasp_cream_cheese", "grasp_tomato_sauce", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"],
+            "put_tomato_sauce_in_basket_2": ["grasp_cream_cheese", "grasp_alphabet_soup", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"],
+
+            "put_cream_cheese_in_basket_2": ["grasp_alphabet_soup", "grasp_tomato_sauce", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"],
+            "put_butter_in_basket_2": ["grasp_cream_cheese", "grasp_alphabet_soup", "grasp_tomato_sauce", "grasp_ketchup", "grasp_milk", "grasp_orange_juice"],
+
+        }
+
+        self.tasks_to_inadm_validation = {
+            
         }
 
         self.task_to_predicate = {
+
+            # Old tasks
+            "turn_on_stove_3": ["turnon", "flat_stove_1"],
+            "close_microwave_6": ["close", "microwave_1"],
+            "put_pan_on_stove_3": ["on", "chefmate_8_frypan_1", "flat_stove_1_cook_region"],
+            "put_moka_pot_on_stove_3": ["on", "moka_pot_1", "flat_stove_1_cook_region"],
+
+            "put_right_moka_pot_on_stove_8": ["on", "moka_pot_1", "flat_stove_1_cook_region"],
+            "put_left_moka_pot_on_stove_8": ["on", "moka_pot_2", "flat_stove_1_cook_region"],
+
+            "put_alphabet_soup_in_basket_1": ["in", "alphabet_soup_1", "basket_1_contain_region"],
+            "put_cream_cheese_in_basket_1": ["in", "cream_cheese_1", "basket_1_contain_region"],
+
+            "put_alphabet_soup_in_basket_2": ["in", "alphabet_soup_1", "basket_1_contain_region"],
+            "put_tomato_sauce_in_basket_2": ["in", "tomato_sauce_1", "basket_1_contain_region"],
+            
+            "put_cream_cheese_in_basket_2": ["in", "cream_cheese_1", "basket_1_contain_region"],
+            "put_butter_in_basket_2": ["in", "butter_1", "basket_1_contain_region"],
+
             # LL tasks:
             "grasp_bowl": ["grasped", "akita_black_bowl_1"],
             "grasp_ketchup": ["grasped", "ketchup_1"],
@@ -107,6 +151,19 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             "put_ketchup_on_bowl": ["on", "ketchup_1",  "akita_black_bowl_1"], 
             "put_ketchup_on_cabinet": ["on", "ketchup_1", "white_cabinet_1_top_side"], 
 
+
+            "grasp_pan": ["grasped", "chefmate_8_frypan_1"],
+            "grasp_moka_pot": ["grasped", "moka_pot_1"],
+            "grasp_left_moka_pot": ["grasped", "moka_pot_2"],
+            "grasp_yellow_white_mug": ["grasped", "white_yellow_mug_1"],
+            "grasp_porcelain_mug": ["grasped", "porcelain_mug_1"],
+            "grasp_cream_cheese": ["grasped", "cream_cheese_1"],
+            "grasp_tomato_sauce": ["grasped", "tomato_sauce_1"],
+            "grasp_milk": ["grasped", "milk_1"],
+            "grasp_orange_juice": ["grasped", "orange_juice_1"],
+            "grasp_butter": ["grasped", "butter_1"],
+            "grasp_stove": ["grasped", "flat_stove_1"],
+            "grasp_alphabet_soup": ["grasped", "alphabet_soup_1"],
         }
 
 
@@ -114,10 +171,34 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         if predicate[0] == "grasped":
             if predicate[1] == "akita_black_bowl_1":
                 return "grasp_bowl"
+            elif predicate[1] == "alphabet_soup_1":
+                return "grasp_alphabet_soup"
             elif predicate[1] == "ketchup_1":
                 return "grasp_ketchup"
             elif predicate[1] == "white_cabinet_1_top_region":
                 return "grasp_top_drawer"
+            elif predicate[1] == "chefmate_8_frypan_1":
+                return "grasp_pan"
+            elif predicate[1] == "moka_pot_1":
+                return "grasp_moka_pot"
+            elif predicate[1] == "moka_pot_2":
+                return "grasp_left_moka_pot"
+            elif predicate[1] == "white_yellow_mug_1":
+                return "grasp_yellow_white_mug"
+            elif predicate[1] == "porcelain_mug_1":
+                return "grasp_porcelain_mug"
+            elif predicate[1] == "cream_cheese_1":
+                return "grasp_cream_cheese"
+            elif predicate[1] == "tomato_sauce_1":
+                return "grasp_tomato_sauce"
+            elif predicate[1] == "milk_1":
+                return "grasp_milk"
+            elif predicate[1] == "orange_juice_1":
+                return "grasp_orange_juice"
+            elif predicate[1] == "butter_1":
+                return "grasp_butter"
+            elif predicate[1] == "flat_stove_1":
+                return "grasp_stove"
             else:
                 raise Exception(f"Grasping unknown object: {predicate[1]}")
         elif predicate[0] == "ungrasped":
@@ -139,7 +220,10 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         elif predicate[0] == "open":
             return "open_top_drawer"
         elif predicate[0] == "close":
-            return "close_top_drawer"
+            if predicate[1] == "white_cabinet_1_top_region":
+                return "close_top_drawer"
+            elif predicate[1] == "microwave_1":
+                return "close_microwave_6"
         elif predicate[0] == "over":
             if predicate[1] == "ketchup_1":
                 if predicate[2] == "plate_1":
@@ -163,7 +247,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                     raise Exception(f"Placing object: {predicate[1]} over unknown location {predicate[2]}")
             else:
                 raise Exception(f"Placing unknown object: {predicate[1]}")
-        elif predicate[0] == "put":
+        elif predicate[0] == "on":
             if predicate[1] == "ketchup_1":
                 if predicate[2] == "plate_1":
                     return "put_ketchup_on_plate"
@@ -175,6 +259,9 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                     return "put_ketchup_on_cabinet"
                 else:
                     raise Exception(f"Placing object: {predicate[1]} over unknown location {predicate[2]}")
+            elif predicate[1] == "chefmate_8_frypan_1":
+                if predicate[2] == "flat_stove_1_cook_region":
+                    return "put_pan_on_stove_3"
             elif predicate[1] == "akita_black_bowl_1":
                 if predicate[2] == "plate_1":
                     return "put_bowl_on_plate"
@@ -184,12 +271,41 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                     return "put_bowl_on_cabinet"
                 else:
                     raise Exception(f"Placing object: {predicate[1]} over unknown location {predicate[2]}")
+            elif predicate[1] == "moka_pot_1":
+                if predicate[2] == "flat_stove_1_cook_region":
+                    return "put_moka_pot_on_stove_3"
+            elif predicate[1] == "moka_pot_2":
+                if predicate[2] == "flat_stove_1_cook_region":
+                    return "put_left_moka_pot_on_stove"
             else:
                 raise Exception(f"Placing unknown object: {predicate[1]}")
-        
+        elif predicate[0] == "in":
+            if predicate[1] == "cream_cheese_1":
+                if predicate[2] == "basket_1_contain_region":
+                    return "put_cream_cheese_in_basket_2"
+            elif predicate[1] == "butter_1":
+                if predicate[2] == "basket_1_contain_region":
+                    return "put_butter_in_basket_2"
+            elif predicate[1] == "alphabet_soup_1":
+                if predicate[2] == "basket_1_contain_region":
+                    return "put_alphabet_soup_in_basket_2"
+            elif predicate[1] == "tomato_sauce_1":
+                if predicate[2] == "basket_1_contain_region":
+                    return "put_tomato_sauce_in_basket_2"
+            elif predicate[1] == "white_yellow_mug_1":
+                if predicate[2] == "microwave_1_heating_region":
+                    return "put_yellow_white_mug_in_microwave_6"
+
+        elif predicate[0] == "turnon":
+            if predicate[1] == "flat_stove_1":
+
+                return "turn_on_stove_3"
+            else:
+                return Exception(f"Turning on unknown object: {predicate[1]}")
         else:
             raise Exception(f"Unknown task: {predicate[0]}")
 
+        raise Exception("Something's wrong!")
 
 
     def parse_bddl(self):
@@ -215,7 +331,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         goal_state = self.parsed_problem["subgoal_states"][self.current_subgoal_idx]
         all_true = True
         for state in goal_state:
-            print(state)
+            #print(state)
             this_result = self._eval_predicate(state)
             all_true = this_result and all_true
 
@@ -229,19 +345,24 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
 
     def _pass_hard_eval(self):
+        #print("Cur subtask: ", self.parsed_problem["subgoal_states"][self.current_subgoal_idx])
         task = self.predicate_to_task(self.parsed_problem["subgoal_states"][self.current_subgoal_idx][0])
+        
         inadm_tasks = self.task_to_inadm[task]
-        print(task, inadm_tasks)
+        #print("Checking inadm tasks ", inadm_tasks, " for task ", task)
         for inadm in inadm_tasks:
             pred = self.task_to_predicate[inadm]
+            if pred[1] not in self.object_states_dict:
+                continue
             this_result = self._eval_predicate(pred)
+            #print(pred, this_result)
             if this_result:
                 return False, self.predicate_to_task(pred)
-        print("passed hard eval")
+
         return True, None
 
 
-    def step(self, action):
+    def step(self, action, do_hard_validation=False):
 
         obs, reward, done, info = super().step(action)
         self.t_step += 1
@@ -282,7 +403,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             else:
                 obs['subgoal_language'] = self.parsed_problem['subgoal_instructions'][self.current_subgoal_idx]
 
-        print("Final result: ", done, all_subgoals_done)
+        #print("Final result: ", done, all_subgoals_done)
 
         return obs, reward, done and all_subgoals_done, info
 
@@ -291,3 +412,4 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         for obj in self.object_states_dict.values():
             if isinstance(obj, ObjectState):
                 obj.set_init_pos()
+                    

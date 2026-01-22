@@ -1,4 +1,4 @@
-(define (problem LIBERO_Kitchen_Tabletop_Manipulation)
+(define (problem LIBERO_Sequential_Kitchen_Tabletop_Manipulation)
   (:domain robosuite)
   (:language put the right moka pot on the stove, then put the left moka pot on the stove)
     (:regions
@@ -63,7 +63,7 @@
   )
 
   (:goal
-    (And (On moka_pot_1 flat_stove_1_cook_region) (On moka_pot_2 flat_stove_1_cook_region))
+    (And (On moka_pot_1 flat_stove_1_cook_region) (On moka_pot_2 flat_stove_1_cook_region) (TurnonState flat_stove_1))
   )
 
   (:subgoals

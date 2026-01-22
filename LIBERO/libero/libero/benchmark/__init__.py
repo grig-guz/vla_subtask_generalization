@@ -63,6 +63,7 @@ libero_suites = [
     "libero_conj",
     "libero_single"
 ]
+
 task_maps = {}
 max_len = 0
 for libero_suite in libero_suites:

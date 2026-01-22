@@ -24,6 +24,9 @@ REGION_SAMPLERS = {
     },
     'libero_sequential_kitchen_tabletop_manipulation': {
         "kitchen_table": Libero100TableRegionSampler
+    },
+    'libero_sequential_living_room_tabletop_manipulation': {
+        "living_room_table": Libero100TableRegionSampler
     }
 }
 

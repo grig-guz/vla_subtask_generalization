@@ -126,6 +126,10 @@ class TurnOn(UnaryAtomic):
     def __call__(self, arg):
         return arg.turn_on()
 
+class TurnOnState(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.turn_on_state()
+
 
 class TurnOff(UnaryAtomic):
     def __call__(self, arg):
