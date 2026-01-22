@@ -90,10 +90,6 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
         }
 
-        self.tasks_to_inadm_validation = {
-            
-        }
-
         self.task_to_predicate = {
 
             # Old tasks
@@ -357,12 +353,59 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             this_result = self._eval_predicate(pred)
             #print(pred, this_result)
             if this_result:
-                return False, self.predicate_to_task(pred)
+                return False, inadm
+
+        return True, None
+
+    def _pass_hard_eval(self):
+        #print("Cur subtask: ", self.parsed_problem["subgoal_states"][self.current_subgoal_idx])
+        task = self.predicate_to_task(self.parsed_problem["subgoal_states"][self.current_subgoal_idx][0])
+        
+        inadm_tasks = self.task_to_inadm[task]
+        #print("Checking inadm tasks ", inadm_tasks, " for task ", task)
+        for inadm in inadm_tasks:
+            pred = self.task_to_predicate[inadm]
+            if pred[1] not in self.object_states_dict:
+                continue
+            this_result = self._eval_predicate(pred)
+            #print(pred, this_result)
+            if this_result:
+                return False, inadm
+
+        return True, None
+
+    def _pass_hard_eval_validation(self):
+
+        if self.bddl_file_name == "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it":
+            inadm_tasks = ["grasp_moka_pot"]
+        elif self.bddl_file_name == "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it":
+            inadm_tasks = ["grasp_pan"]
+        elif self.bddl_file_name == "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it":
+            inadm_tasks = ["grasp_porcelain_mug"]
+        elif self.bddl_file_name == "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove":
+            inadm_tasks = ["turn_on_stove_3"]
+        elif self.bddl_file_name == "LIVING_ROOM_SCENE1_put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket":
+            inadm_tasks = ["grasp_tomato_sauce", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
+        elif self.bddl_file_name == "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket":
+            inadm_tasks = ["grasp_cream_cheese", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
+        elif self.bddl_file_name == "LIVING_ROOM_SCENE2_put_both_the_cream_cheese_box_and_the_butter_in_the_basket":
+            inadm_tasks = ["grasp_tomato_sauce", "grasp_alphabet_soup", "grasp_ketchup", "grasp_milk", "grasp_orange_juice"]
+        else:
+            raise Exception("Unknown bddl file")
+
+        for inadm in inadm_tasks:
+            pred = self.task_to_predicate[inadm]
+            if pred[1] not in self.object_states_dict:
+                continue
+            this_result = self._eval_predicate(pred)
+            #print(pred, this_result)
+            if this_result:
+                return False, inadm
 
         return True, None
 
 
-    def step(self, action, do_hard_validation=False):
+    def step(self, action, do_hard_validation=False):            
 
         obs, reward, done, info = super().step(action)
         self.t_step += 1
@@ -370,42 +413,44 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             self.update_init_obj_poses()
 
         done = self._check_success()
-        
-        all_subgoals_done = self.current_subgoal_idx >= len(self.parsed_problem['subgoal_states'])
-
-
-        if all_subgoals_done:
-            obs['subgoal_language'] = ''
-            info['subgoal_completed'] = False
-            info["hard_eval_passed"] = True
-            info["inadmissible_task"] = None
+        if do_hard_validation:
+            all_subgoals_done = True
+            info["hard_eval_passed"], info["inadmissible_task"] = self._pass_hard_eval_validation()
         else:
-            done_subgoal = self._check_success_seq()
-            hard_eval_passed, inadm_task = self._pass_hard_eval()
-            info["hard_eval_passed"] = hard_eval_passed
-            if hard_eval_passed:
+            all_subgoals_done = self.current_subgoal_idx >= len(self.parsed_problem['subgoal_states'])
+
+            if all_subgoals_done:
+                obs['subgoal_language'] = ''
+                info['subgoal_completed'] = False
+                info["hard_eval_passed"] = True
                 info["inadmissible_task"] = None
             else:
-                info["inadmissible_task"] = inadm_task
-                print("HARD EVAL FAILED, INADMISSIBLE TASK: ", inadm_task)
+                done_subgoal = self._check_success_seq()
+                hard_eval_passed, inadm_task = self._pass_hard_eval()
+                info["hard_eval_passed"] = hard_eval_passed
+                if hard_eval_passed:
+                    info["inadmissible_task"] = None
+                else:
+                    info["inadmissible_task"] = inadm_task
+                    print("HARD EVAL FAILED, INADMISSIBLE TASK: ", inadm_task)
 
-            if done_subgoal:
-                info['subgoal_completed'] = True
-                self.current_subgoal_idx += 1
-                self.update_init_obj_poses()
-            else:
-                info['subgoal_completed'] = False
-            
+                if done_subgoal:
+                    info['subgoal_completed'] = True
+                    self.current_subgoal_idx += 1
+                    self.update_init_obj_poses()
+                else:
+                    info['subgoal_completed'] = False
+                
 
-            if self.current_subgoal_idx >= len(self.parsed_problem['subgoal_states']):
-                obs['subgoal_language'] = None
-                all_subgoals_done = True
-            else:
-                obs['subgoal_language'] = self.parsed_problem['subgoal_instructions'][self.current_subgoal_idx]
+                if self.current_subgoal_idx >= len(self.parsed_problem['subgoal_states']):
+                    obs['subgoal_language'] = None
+                    all_subgoals_done = True
+                else:
+                    obs['subgoal_language'] = self.parsed_problem['subgoal_instructions'][self.current_subgoal_idx]
 
-        #print("Final result: ", done, all_subgoals_done)
+            #print("Final result: ", done, all_subgoals_done)
 
-        return obs, reward, done and all_subgoals_done, info
+            return obs, reward, done and all_subgoals_done, info
 
 
     def update_init_obj_poses(self):
