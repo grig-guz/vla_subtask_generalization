@@ -80,7 +80,7 @@ class ObjectState(BaseObjectState):
 
     def check_grasped(self):
         #print(f"Checking grasped for object {self.object_name}, grasped before: {self.is_grasped_init}, type?: {type(self.is_grasped_init)}")
-        if not (isinstance(self.is_grasped_init, bool) or isinstance(self.is_grasped_init, np.bool)):
+        if not (isinstance(self.is_grasped_init, bool) or isinstance(self.is_grasped_init, np.bool_)):
             return False
 
         #print(f"Object {self.object_name}, grasped before: {self.is_grasped_init}, after: {self.check_grasped_state()}")

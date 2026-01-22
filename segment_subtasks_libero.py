@@ -114,9 +114,9 @@ def process_libero(args):
         for task_id in task_ids_per_suite[suite_name]:
 
             task = suite.get_task(task_id)
-            data_file = h5py.File(os.path.join("/home/gguz/scratch/datasets", suite.get_task_demonstration(task_id)), "r")
+            data_file = h5py.File(os.path.join("/ubc/cs/research/ubc_ml/gguz/datasets/libero", suite.get_task_demonstration(task_id)), "r")
             
-            full_path = args.bddl_files_path + "/libero_high_level_hard/" + task.bddl_file
+            full_path = os.path.join(args.bddl_files_path, "libero_high_level_hard",  task.bddl_file)
             print("Full path: ", full_path)
 
             env_args = {
@@ -216,17 +216,17 @@ def process_libero(args):
                         hl_ll_traj['ll_segments'].append((t0, t1))
                         hl_ll_traj['ll_instructions'].append(subgoal_instructions[seg_id])#standard_to_low[task.language][seg_id])
 
-                        if args.video_store_path:
+                        #if args.video_store_path:
 
                             #video_writer = imageio.get_writer(args.video_store_path + \
                             #        f"/instr_{standard_to_low[task.language][seg_id]}_traj_{traj_id}_seg_{subtask_id}.mp4", fps=60)
-                            video_writer = imageio.get_writer(args.video_store_path + \
-                                    f"/traj_{traj_id}_instr_{subgoal_instructions[seg_id]}_seg_{subtask_id}.mp4", fps=60)
+                        #    video_writer = imageio.get_writer(args.video_store_path + \
+                        #            f"/traj_{traj_id}_instr_{subgoal_instructions[seg_id]}_seg_{subtask_id}.mp4", fps=60)
 
-                            images = static_images[t0:t1]
-                            for image in images:
-                                video_writer.append_data(image)
-                            video_writer.close()
+                        #    images = static_images[t0:t1]
+                        #    for image in images:
+                        #        video_writer.append_data(image)
+                        #    video_writer.close()
 
                         subtask_id += 1
                     hl_ll_dataset.append(hl_ll_traj)
@@ -235,30 +235,30 @@ def process_libero(args):
                 elif not done:
                     print("Skipping the demonstration, task not completed")
 
-                if args.video_store_path:
+                #if args.video_store_path:
                     #video_writer = imageio.get_writer(args.video_store_path + \
                     #        f"/instr_{standard_to_low[task.language][seg_id]}_traj_{traj_id}_seg_{subtask_id}.mp4", fps=60)
-                    video_writer = imageio.get_writer(args.video_store_path + \
-                            f"/traj_{traj_id}_instr_{task.language}.mp4", fps=60)
+                #    video_writer = imageio.get_writer(args.video_store_path + \
+                #            f"/traj_{traj_id}_instr_{task.language}.mp4", fps=60)
 
-                    images = static_images
-                    for image in images:
-                        video_writer.append_data(image)
-                    video_writer.close()
+                #    images = static_images
+                #    for image in images:
+                #        video_writer.append_data(image)
+                #    video_writer.close()
 
-        print("Counts per task:" )
-        print(counts_per_task)
-        if args.save_dataset:
-            print("Saving the dataset")
-            with open(args.data_store_path + f'/libero_segmented_dataset.pkl', 'wb') as f:
-                pickle.dump(hl_ll_dataset, f)
+    print("Counts per task:" )
+    print(counts_per_task)
+    if args.save_dataset:
+        print("Saving the dataset")
+        with open(args.data_store_path + f'/libero_segmented_dataset.pkl', 'wb') as f:
+            pickle.dump(hl_ll_dataset, f)
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bddl_files_path", type=str, default="/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/")
-    parser.add_argument("--data_store_path", type=str, default="/home/gguz/scratch/datasets")
+    parser.add_argument("--bddl_files_path", type=str, default="/ubc/cs/research/nlp/grigorii/projects/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/")
+    parser.add_argument("--data_store_path", type=str, default="/ubc/cs/research/ubc_ml/gguz/datasets/libero")
     parser.add_argument("--video_store_path", type=str, default="/home/gguz/scratch/results/videos_seg")
     parser.add_argument("--save_dataset", type=bool, default=True)
     args = parser.parse_args()
