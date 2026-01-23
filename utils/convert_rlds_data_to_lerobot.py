@@ -30,10 +30,10 @@ sys.path.append("/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalizatio
 from utils.calvin_utils import get_calvin_env
 
 
-REPO_NAMES = ["calvin_high_level_wrist", 
-              #"libero_low_level",
-              #"libero_high_level", 
-              #"libero_conj", 
+REPO_NAMES = [#"calvin_high_level_wrist", 
+              "libero_low_level",
+              "libero_high_level", 
+              "libero_conj", 
               #"calvin_conj", 
               ]
 
@@ -54,7 +54,7 @@ def main(data_dir: str, *, push_to_hub: bool = False):
         if 'calvin' in REPO_NAME:
             state_dim = 15
         else:
-            state_dim = 9
+            state_dim = 8
         dataset = LeRobotDataset.create(
             repo_id=REPO_NAME,
             robot_type="panda",
@@ -96,10 +96,9 @@ def main(data_dir: str, *, push_to_hub: bool = False):
                     wrist_cam = viz['rgb_obs']['rgb_gripper']
                 else:
                     wrist_cam = step["observation"]["wrist_image"]
-                dataset.add_frame(
-                    {
+                dataset.add_frame({
                         "observation.images.camera1": step["observation"]["image"],
-                        "observation.images.camera2": wrist_cam,#np.zeros((256, 256, 3)),#wrist_cam,#step["observation"]["wrist_image"],
+                        "observation.images.camera2": np.zeros((256, 256, 3)),#wrist_cam,#np.zeros((256, 256, 3)),#wrist_cam,#step["observation"]["wrist_image"],
                         #'observation.images.camera2_is_pad': True,
                         "observation.state": step["observation"]["state"],
                         "action": step["action"],

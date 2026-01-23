@@ -27,8 +27,9 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             *args,
             **kwargs
         )
-        assert 'subgoal_states' in self.parsed_problem and len(self.parsed_problem['subgoal_states']) > 0
+        #assert 'subgoal_states' in self.parsed_problem and len(self.parsed_problem['subgoal_states']) > 0
         self.current_subgoal_idx = 0
+        self.do_hard_validation = False
         self.t_step = 0
         self.task_to_inadm = {
             # LL task mappings
@@ -162,6 +163,8 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             "grasp_alphabet_soup": ["grasped", "alphabet_soup_1"],
         }
 
+    def set_hard_validation(self, do_hard_validation):
+        self.do_hard_validation = do_hard_validation
 
     def predicate_to_task(self, predicate):
         if predicate[0] == "grasped":
@@ -376,20 +379,46 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
     def _pass_hard_eval_validation(self):
 
-        if self.bddl_file_name == "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it":
+        if "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it" in self.bddl_file_name:
             inadm_tasks = ["grasp_moka_pot"]
-        elif self.bddl_file_name == "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it":
+        elif "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it" in self.bddl_file_name:
             inadm_tasks = ["grasp_pan"]
-        elif self.bddl_file_name == "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it":
+        elif "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it" in self.bddl_file_name:
             inadm_tasks = ["grasp_porcelain_mug"]
-        elif self.bddl_file_name == "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove":
+        elif "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove" in self.bddl_file_name:
             inadm_tasks = ["turn_on_stove_3"]
-        elif self.bddl_file_name == "LIVING_ROOM_SCENE1_put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket":
+        elif "LIVING_ROOM_SCENE1_put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket" in self.bddl_file_name:
             inadm_tasks = ["grasp_tomato_sauce", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
-        elif self.bddl_file_name == "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket":
+        elif "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket" in self.bddl_file_name:
             inadm_tasks = ["grasp_cream_cheese", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
-        elif self.bddl_file_name == "LIVING_ROOM_SCENE2_put_both_the_cream_cheese_box_and_the_butter_in_the_basket":
+        elif "LIVING_ROOM_SCENE2_put_both_the_cream_cheese_box_and_the_butter_in_the_basket" in self.bddl_file_name:
             inadm_tasks = ["grasp_tomato_sauce", "grasp_alphabet_soup", "grasp_ketchup", "grasp_milk", "grasp_orange_juice"]
+        elif "KITCHEN_SCENE3_put_the_frying_pan_on_the_stove" in self.bddl_file_name:
+            inadm_tasks = ["turn_on_stove_3", "grasp_moka_pot"]
+        elif "KITCHEN_SCENE3_put_the_moka_pot_on_the_stove" in self.bddl_file_name:
+            inadm_tasks = ["turn_on_stove_3", "grasp_pan"]
+        elif "KITCHEN_SCENE3_turn_on_the_stove" in self.bddl_file_name:
+            inadm_tasks = ["grasp_moka_pot", "grasp_pan"]
+        elif "KITCHEN_SCENE6_close_the_microwave" in self.bddl_file_name:
+            inadm_tasks = ["grasp_porcelain_mug", "grasp_yellow_white_mug"]
+        elif "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave" in self.bddl_file_name:
+            inadm_tasks = ["grasp_porcelain_mug", "close_microwave_6"]
+        elif "KITCHEN_SCENE8_put_the_left_moka_pot_on_the_stove" in self.bddl_file_name:
+            inadm_tasks = ["grasp_moka_pot"]
+        elif "KITCHEN_SCENE8_put_the_right_moka_pot_on_the_stove" in self.bddl_file_name:
+            inadm_tasks = ["grasp_left_moka_pot"]
+        elif "LIVING_ROOM_SCENE1_pick_up_the_alphabet_soup_and_put_it_in_the_basket" in self.bddl_file_name:
+            inadm_tasks = ["grasp_tomato_sauce", "grasp_cream_cheese", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
+        elif "LIVING_ROOM_SCENE1_pick_up_the_cream_cheese_box_and_put_it_in_the_basket" in self.bddl_file_name:
+            inadm_tasks = ["grasp_tomato_sauce", "grasp_alphabet_soup", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
+        elif "LIVING_ROOM_SCENE2_pick_up_the_alphabet_soup_and_put_it_in_the_basket" in self.bddl_file_name:
+            inadm_tasks = ["grasp_tomato_sauce", "grasp_cream_cheese", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
+        elif "LIVING_ROOM_SCENE2_pick_up_the_butter_and_put_it_in_the_basket" in self.bddl_file_name:
+            inadm_tasks = ["grasp_tomato_sauce", "grasp_cream_cheese", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_alphabet_soup"]
+        elif "LIVING_ROOM_SCENE2_pick_up_the_cream_cheese_box_and_put_it_in_the_basket" in self.bddl_file_name:
+            inadm_tasks = ["grasp_tomato_sauce", "grasp_alphabet_soup", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
+        elif "LIVING_ROOM_SCENE2_pick_up_the_tomato_sauce_and_put_it_in_the_basket" in self.bddl_file_name:
+            inadm_tasks = ["grasp_cream_cheese", "grasp_alphabet_soup", "grasp_ketchup", "grasp_milk", "grasp_orange_juice", "grasp_butter"]
         else:
             raise Exception("Unknown bddl file")
 
@@ -405,7 +434,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         return True, None
 
 
-    def step(self, action, do_hard_validation=False):            
+    def step(self, action):            
 
         obs, reward, done, info = super().step(action)
         self.t_step += 1
@@ -413,7 +442,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             self.update_init_obj_poses()
 
         done = self._check_success()
-        if do_hard_validation:
+        if self.do_hard_validation:
             all_subgoals_done = True
             info["hard_eval_passed"], info["inadmissible_task"] = self._pass_hard_eval_validation()
         else:
@@ -450,7 +479,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
             #print("Final result: ", done, all_subgoals_done)
 
-            return obs, reward, done and all_subgoals_done, info
+        return obs, reward, done and all_subgoals_done, info
 
 
     def update_init_obj_poses(self):

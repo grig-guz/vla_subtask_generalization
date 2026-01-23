@@ -1,4 +1,4 @@
-(define (problem LIBERO_Kitchen_Tabletop_Manipulation)
+(define (problem LIBERO_Sequential_Kitchen_Tabletop_Manipulation)
   (:domain robosuite)
   (:language close the microwave)
     (:regions

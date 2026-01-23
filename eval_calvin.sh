@@ -1,8 +1,8 @@
 
 
 EVAL_TYPE="high_random" # high_random, conj_random, low_random, high_random_easy_eval, conj_random_easy_eval, low_random_easy_eval
-MODEL="octo" # octo, pi0_fast, cogact
-PRETRAINED_CHECKPOINT="/home/gguz/scratch/checkpoints/octo_finetune/calvin_high_level/random_False/experiment_2_20260116_105329_calvin_high_level_small_False_1"
+MODEL="pi05" # octo, pi0_fast, cogact
+PRETRAINED_CHECKPOINT="/home/gguz/scratch/checkpoints/pi05/calvin_high_1/checkpoints/last"
 
 
 
@@ -19,4 +19,4 @@ uv run run_calvin_eval.py \
     --video_save_dir=$VIDEO_SAVE_DIR \
     --calvin_config_path=$CALVIN_CONFIG_PATH \
     --num_videos=10 \
-    --num_sequences=10
+    --num_sequences=1000
