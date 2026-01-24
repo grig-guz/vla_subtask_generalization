@@ -84,12 +84,12 @@
   )
 
   (:goal
-    (And (Close white_cabinet_1_top_region))
+    (And (CloseHigh white_cabinet_1_top_region))
   )
 
   (:subgoals
     (And (Grasped white_cabinet_1_top_region))
-    (And (Close white_cabinet_1_top_region))
+    (And (CloseLow white_cabinet_1_top_region))
     (And (Ungrasped white_cabinet_1_top_region))
   )
 

@@ -24,7 +24,7 @@ from calvin_env.utils.utils import FpsController
 log = logging.getLogger(__name__)
 from rich.traceback import install
 
-install(show_locals=True)
+#install(show_locals=True)
 
 
 class PlayTableSimEnv(gym.Env):

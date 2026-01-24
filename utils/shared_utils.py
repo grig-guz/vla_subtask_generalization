@@ -21,13 +21,20 @@ def temp_seed(seed):
 
 
 def run_validation(policy, eval_type, model_name, global_step, processors=None, config_path="utils/med_tasks_config.yaml"):
-    from run_calvin_eval import evaluate_policy
-    from run_libero_eval import evaluate_libero_policy
-    from utils.calvin_utils import get_calvin_env
+    
 
     if 'libero' in eval_type:
-        new_rate, _ = evaluate_libero_policy(
-            task_suite_name=eval_type,
+        from run_libero_eval import evaluate_libero_policy
+
+        if 'low_level' in eval_type:
+            eval_type_libero = "libero_low_level_hard"
+        elif 'conj' in eval_type:
+            eval_type_libero = "libero_conj_hard"
+        else:
+            eval_type_libero = "libero_high_level_hard"
+
+        new_rate, _, _ = evaluate_libero_policy(
+            task_suite_name=eval_type_libero,
             num_trials_per_task=3,
             model_name=model_name,
             action_horizon=10,
@@ -37,6 +44,9 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
             timestep=global_step
         )
     else:
+        from run_calvin_eval import evaluate_policy
+        from utils.calvin_utils import get_calvin_env
+
         env, calvin_cfg = get_calvin_env(
             train_cfg_path=None,
             merged_cfg_path=config_path,
@@ -105,10 +115,14 @@ def normalize_gripper_action(action, binarize=True):
 
     if binarize:
         # Binarize to -1 or +1.
-        action[..., -1] = np.sign(action[..., -1])
+        action = binarize_gripper_action(action)
 
     return action
 
+
+def binarize_gripper_action(action):
+    action[..., -1] = np.sign(action[..., -1])
+    return action
 
 def get_libero_dummy_action():
     """Get dummy/no-op action, used to roll out the simulation while the robot does nothing."""

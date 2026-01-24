@@ -229,7 +229,7 @@ def rollout(task, lang_annotation, cfg, model, processors, env, task_oracle, rec
     window_size = cfg.action_horizon
     act_step = cfg.action_horizon
 
-    if cfg.model in ['smolvla', 'groot']:
+    if cfg.model in ['smolvla', 'groot', 'pi05']:
         window_size = 1
         act_step = 1
         model.config.n_action_steps = 10
@@ -335,7 +335,7 @@ def get_action(cfg, model, processors, obs, past_obs, lang_annotation, goal, act
             inputs = {"observation/image": primary_img, "observation/state": state, "prompt": lang_annotation}
             action_buffer = model.infer(inputs)["actions"]
             action_buffer = np.array(action_buffer)
-        elif cfg.model in ['smolvla', 'groot']:
+        elif cfg.model in ['smolvla', 'groot', 'pi05']:
             preprocessor, postprocessor = processors
             main_img = torch.permute(torch.tensor(primary_img, device="cuda:0", dtype=torch.float32), (2, 0, 1)).unsqueeze(0)
             observation = {
@@ -354,7 +354,7 @@ def get_action(cfg, model, processors, obs, past_obs, lang_annotation, goal, act
             return action, action_buffer, act_step
         else:
             raise Exception("Unknown model!")
-    
+
     action = action_buffer[act_step]
     action = normalize_gripper_action(action)
     return action, action_buffer, act_step
@@ -442,8 +442,10 @@ def eval_calvin(cfg: GenerateConfig) -> None:
             subset_stats = pickle.load(input_file)
             results_dict['subset_stats'] = subset_stats
 
-    if cfg.model == 'cogact':
+    if cfg.model in ['cogact']:
         scores_path = Path(cfg.results_save_dir) / "calvin" / (pretr_path.parent.parent.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
+    elif cfg.model in ['pi05']:
+        scores_path = Path(cfg.results_save_dir) / "calvin" / (pretr_path.parent.parent.parent.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
     else:
         scores_path = Path(cfg.results_save_dir) / "calvin" / (pretr_path.parent.name + "_" + pretr_path.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
 

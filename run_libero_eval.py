@@ -15,6 +15,7 @@ import logging
 import cv2
 import os
 import imageio
+from collections import defaultdict
 
 from utils.calvin_utils import  get_libero_env, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, invert_gripper_action, resize_image
 from utils.shared_utils import  high_to_low_level_mappings, normalize_gripper_action, set_seed_everywhere, get_libero_dummy_action, quat2axisangle
@@ -66,7 +67,7 @@ def get_libero_image(obs, resize_size):
     if isinstance(resize_size, int):
         resize_size = (resize_size, resize_size)
     img = obs["agentview_image"]
-    img = img[::-1]  # IMPORTANT: rotate 180 degrees to match train preprocessing
+    img = img[::-1,::-1]  # IMPORTANT: rotate 180 degrees to match train preprocessing
     img = resize_image(img, resize_size)
     return img
 
@@ -87,6 +88,7 @@ def save_rollout_video(video_save_dir, rollout_images, idx, success, task_descri
         print(f"Saved rollout MP4 at path {mp4_path}")
         return mp4_path
 
+
 def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, action_horizon, policy, processors=None, num_steps_wait=10, timestep=-1, video_save_dir=None):
     from libero.libero import benchmark
 
@@ -97,6 +99,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
 
     total_episodes, total_successes = 0, 0
     per_task_rates = {}
+    failure_dict = defaultdict(list)
 
     for task_id in tqdm(range(num_tasks_in_suite)):
         # Get task
@@ -107,6 +110,11 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
 
         # Initialize LIBERO environment and task description
         env, lang_annotation = get_libero_env(task, resolution=256)
+
+        hard_eval = False
+        if 'hard' in task.problem_folder:
+            hard_eval = True
+            env.env.set_hard_validation(hard_eval)
 
         if model_name == 'octo':
             goal = policy.create_tasks(texts=[lang_annotation])
@@ -125,7 +133,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
         elif model_name == 'pi0_fast':
             window_size = 10
             act_step = 10
-        elif model_name in ['smolvla', 'groot']:
+        elif model_name in ['smolvla', 'groot', 'pi05']:
             window_size = 1
             act_step = 1
 
@@ -133,7 +141,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
         task_episodes, task_successes = 0, 0
         for episode_idx in tqdm(range(num_trials_per_task)):
             print(f"\nTask: {lang_annotation}")
-            if model_name in ['cogact', 'smolvla', 'groot']:
+            if model_name in ['cogact', 'smolvla', 'groot', 'pi05']:
                 policy.reset()
 
             # Reset environment
@@ -163,7 +171,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                 # Save preprocessed image for replay video
                 replay_images.append(get_libero_image(obs, resize_size))
 
-                primary_img = obs['agentview_image'][::-1]
+                primary_img = obs['agentview_image'][::-1, ::-1]
                 #wrist_img = 
                 state = np.concatenate((obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"]))
                 if act_step > 0 and act_step % window_size == 0:
@@ -171,7 +179,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                     if model_name == 'octo':
                         static_2 = resize_image(primary_img, (256, 256), primary=True)
                         if past_obs:
-                            static_1 = resize_image(past_obs['agentview_image'][::-1], (256, 256), primary=True)
+                            static_1 = resize_image(past_obs['agentview_image'][::-1,::-1], (256, 256), primary=True)
                             primary_img_stacked = np.stack([static_1, static_2])
                             timestep_pad_mask = np.array([[True, True]])
                         else:
@@ -204,7 +212,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                         inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
                         action_buffer = policy.infer(inputs)["actions"]
                         action = action_buffer[act_step]
-                    elif model_name in ['smolvla', 'groot']:
+                    elif model_name in ['smolvla', 'groot', 'pi05']:
                         preprocessor, postprocessor = processors
                         primary_img = torch.permute(torch.tensor(primary_img.copy(), device="cuda:0", dtype=torch.float32), (2, 0, 1)).unsqueeze(0)
                         observation = {
@@ -219,6 +227,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                         # LeRobot handles action chunks on its own
                         action_buffer = np.array(postprocessor(action_buffer))
                         action = action_buffer[0]
+                        action = binarize_gripper_action(action)
                     else:
                         raise Exception("Unknown model!")
                 else:
@@ -233,11 +242,20 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                 # Execute action in environment
                 past_obs = obs
                 obs, reward, done, info = env.step(action.tolist())
+
+                if not info['hard_eval_passed']:
+                    failure_dict[lang_annotation].append(info["inadmissible_task"])
+                    break
+
                 if done:
+                    failure_dict[lang_annotation].append("success")
                     task_successes += 1
                     total_successes += 1
                     break
                 t += 1
+                
+            if t == max_steps + num_steps_wait:
+                failure_dict[lang_annotation].append("timeout")
 
             task_episodes += 1
             total_episodes += 1
@@ -261,7 +279,8 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
 
     total_rate = float(total_successes) / float(total_episodes)
 
-    return total_rate, per_task_rates
+    return total_rate, per_task_rates, failure_dict
+
 
 @draccus.wrap()
 def eval_libero(cfg: GenerateConfig) -> None:
@@ -280,7 +299,7 @@ def eval_libero(cfg: GenerateConfig) -> None:
         cfg.action_horizon = 10
 
 
-    average_rate, per_task_rate = evaluate_libero_policy(
+    average_rate, per_task_rate, failure_dict = evaluate_libero_policy(
         task_suite_name=cfg.task_suite_name,
         num_trials_per_task=cfg.num_trials_per_task,
         model_name=cfg.model,
@@ -292,18 +311,19 @@ def eval_libero(cfg: GenerateConfig) -> None:
     )
 
     results_dict = {}
-    results_dict[Path(cfg.pretrained_checkpoint).name] = (average_rate, per_task_rate)
+    results_dict[Path(cfg.pretrained_checkpoint).name] = (average_rate, per_task_rate, failure_dict)
     pretr_path = Path(cfg.pretrained_checkpoint)
 
     if cfg.model == 'cogact':
         scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
-    elif cfg.model == 'pi0_fast':
-        scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.name + "_" + pretr_path.parent.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
+    elif cfg.model in ['pi05']:
+        scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.parent.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
     else:
         scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.name + "_" + pretr_path.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
 
     with open(scores_path, 'wb') as myfile:
         pickle.dump(results_dict, myfile)
+
 
 if __name__ == "__main__":
     eval_libero()

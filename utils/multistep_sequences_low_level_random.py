@@ -203,6 +203,7 @@ def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
         "blue_block": ["table", "slider_right", "slider_left"],
         "pink_block": ["table", "slider_right", "slider_left"],
         "grasped": [0],
+        "contact": [0],
         "red_block_lifted": [0],
         "blue_block_lifted": [0],
         "pink_block_lifted": [0],

@@ -107,7 +107,7 @@ def get_env_and_checkpoint(cfg):
     elif cfg.model == 'cogact':
         model, processor = load_cogact_checkpoint(cfg.pretrained_checkpoint)
         calvin_cfg.action_horizon = 10
-    elif cfg.model in ['smolvla', 'groot']:
+    elif cfg.model in ['smolvla', 'groot', 'pi05']:
         model, processor = load_smolvla_groot_checkpoint(cfg.pretrained_checkpoint)
         calvin_cfg.action_horizon = 10
 
@@ -135,9 +135,12 @@ def load_smolvla_groot_checkpoint(checkpoint_path):
     if 'smolvla' in checkpoint_path:
         from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy
         policy_cls = SmolVLAPolicy
-    elif 'groot' in checkpont_path:
+    elif 'groot' in checkpoint_path:
         from lerobot.policies.groot.groot_n1 import GR00TN15
         policy_cls = GR00TN15
+    elif 'pi05' in checkpoint_path:
+        from lerobot.policies.pi05.modeling_pi05 import PI05Policy
+        policy_cls = PI05Policy
 
 
     policy = policy_cls.from_pretrained(checkpoint_path).to("cuda").eval()

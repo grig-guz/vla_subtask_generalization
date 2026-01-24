@@ -207,12 +207,14 @@ class WhiteCabinet(ArticulatedObject):
         self.object_properties["articulation"]["default_close_ranges"] = [0.0, 0.005]
 
     def is_open(self, qpos):
+        #print("checking is_open inside white cab", self.name, qpos)
         if qpos < max(self.object_properties["articulation"]["default_open_ranges"]):
             return True
         else:
             return False
 
     def is_close(self, qpos):
+        #print("checking is_close inside white cab", self.name, qpos)
         if qpos > min(self.object_properties["articulation"]["default_close_ranges"]):
             return True
         else:
