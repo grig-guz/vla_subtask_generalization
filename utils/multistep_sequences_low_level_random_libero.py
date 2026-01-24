@@ -121,8 +121,11 @@ class GraspRigid(LiberoTask):
         }
 
     def check_preconditions(self, state):
-        first_check = super().check_preconditions(state)
+        if state[self.target_obj] == "top_drawer":
+            return False
 
+        first_check = super().check_preconditions(state)
+        
         if first_check:
             # check that there's no other objects on top 
             for other_obj in self.all_rigid_objs:
@@ -135,6 +138,7 @@ class GraspRigid(LiberoTask):
 
     def update_state(self, state):
         state = super().update_state(state)
+
         for other_block in self.all_rigid_objs:
             if other_block != self.target_obj and state[self.target_obj] == other_block:
                 state[self.target_obj + "_lifted"] = 1
@@ -264,6 +268,9 @@ class MoveDrawer(LiberoTask):
             self.target_obj = np.random.choice(["top_drawer"], size=1)[0]
 
     def check_preconditions(self, state):
+        if state["ketchup"] == "top_drawer":
+            return False
+        
         if state[self.target_obj] == self.direction or state["grasped"] != self.target_obj:
             return False
         return True
