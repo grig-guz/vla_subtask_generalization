@@ -98,15 +98,14 @@ class PickPlaceObj(LiberoTask):
             self.target_loc = np.random.choice(self.all_locations, size=1)[0]
         
     def check_preconditions(self, state):
+        if state[self.target_obj] == "top_drawer":
+            return False
         if self.target_obj != self.target_loc and state[self.target_obj] != self.target_loc:
             if self.target_loc in ["plate", "black_bowl"]:
                 if state[self.target_loc] in ["floor", "cabinet_top"]:
                     return True
             elif self.target_loc == "top_drawer":
                 if state['top_drawer'] == 'open':
-                    return True
-            elif self.target_loc == "middle_drawer":
-                if state['top_drawer'] == 'closed' and state['middle_drawer'] == 'open':
                     return True
             elif self.target_loc == 'cabinet_top':
                 if all([state[obj] != "cabinet_top" for obj in self.all_rigid_objs]):
@@ -130,9 +129,12 @@ class OpenCloseDrawer(LiberoTask):
         super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
         self.direction = np.random.choice(["open", "closed"], size=1)[0]
         if target_obj == None:
-            self.target_obj = np.random.choice(["top_drawer", "middle_drawer"], size=1)[0]
+            self.target_obj = "top_drawer"
 
     def check_preconditions(self, state):
+        if state["ketchup"] == "top_drawer":
+            return False
+        
         if state[self.target_obj] == self.direction:
             return False
         return True
@@ -157,9 +159,9 @@ def get_sequences_for_state2(args):
     
     all_tasks = [PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, OpenCloseDrawer, OpenCloseDrawer, OpenCloseDrawer]
     all_rigid_objs = ["black_bowl", "ketchup"]
-    all_articulated_objects = ["top_drawer", "middle_drawer"]
+    all_articulated_objects = ["top_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
-    all_locations = ["cabinet_top", "top_drawer", "middle_drawer", "plate", "black_bowl"]
+    all_locations = ["cabinet_top", "top_drawer", "plate", "black_bowl"]
 
     while len(results) < num_sequences:
         seq = np.random.choice(all_tasks, size=seq_len, replace=False)
@@ -196,7 +198,6 @@ def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
     # An object is never in a drawer initially.
     possible_conditions = {
         "top_drawer": ["closed", "open"],
-        "middle_drawer": ["closed", "open"],
         "black_bowl": ["floor"],
         "plate": ["floor"],
         "ketchup": ["floor"],
