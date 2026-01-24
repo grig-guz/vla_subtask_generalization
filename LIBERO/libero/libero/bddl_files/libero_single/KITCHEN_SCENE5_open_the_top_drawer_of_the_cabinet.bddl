@@ -80,15 +80,16 @@
     (On plate_1 kitchen_table_plate_init_region)
     (On white_cabinet_1 kitchen_table_white_cabinet_init_region)
     (On ketchup_1 kitchen_table_ketchup_init_region)
+    (Close white_cabinet_1_top_region)
   )
 
   (:goal
-    (And (Open white_cabinet_1_top_region))
+    (And (OpenHigh white_cabinet_1_top_region))
   )
 
   (:subgoals
     (And (Grasped white_cabinet_1_top_region))
-    (And (Open white_cabinet_1_top_region))
+    (And (OpenLow white_cabinet_1_top_region))
     (And (Ungrasped white_cabinet_1_top_region))
   )
 

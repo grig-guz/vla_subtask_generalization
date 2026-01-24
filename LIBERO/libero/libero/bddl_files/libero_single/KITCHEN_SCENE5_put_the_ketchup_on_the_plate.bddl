@@ -84,21 +84,22 @@
   )
 
   (:goal
-    (And (On ketchup_1 akita_black_bowl_1))
+    (And (On ketchup_1 plate_1))
   )
 
   (:subgoals
     (And (Grasped ketchup_1))
     (And (Lifted ketchup_1))
-    (And (Over ketchup_1 akita_black_bowl_1))
+    (And (Over ketchup_1 plate_1))
     (And (Ungrasped ketchup_1))
   )
 
   (:subgoal_instructions
     (:subgoal_instruction grasp the ketchup)
     (:subgoal_instruction lift the grasped object)
-    (:subgoal_instruction place the object over the black bowl)
+    (:subgoal_instruction place the object over the plate)
     (:subgoal_instruction ungrasp the object)
   )
+
 
 )

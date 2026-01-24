@@ -96,6 +96,8 @@ class OpenCloseSampler(ObjectPropertySampler):
         super().__init__(name, mujoco_objects)
 
     def sample(self):
+        if self.state_type == "close" and name == "white_cabinet_1_top_region":
+            return np.array(0.001)
         return np.random.uniform(high=self.joint_ranges[1], low=self.joint_ranges[0])
 
 

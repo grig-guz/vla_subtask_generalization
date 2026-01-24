@@ -33,49 +33,59 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         self.t_step = 0
         self.task_to_inadm = {
             # LL task mappings
-            "grasp_bowl": ["grasp_ketchup", "grasp_top_drawer"],
-            "grasp_ketchup": ["grasp_bowl", "grasp_top_drawer"],
-            "grasp_top_drawer": ["grasp_bowl", "grasp_ketchup",  "open_top_drawer", "close_top_drawer"],
-
+            "grasp_bowl": ["grasp_ketchup", "close_low_top_drawer", "open_low_top_drawer", "grasp_cream_cheese"],
+            "grasp_ketchup": ["grasp_bowl", "close_low_top_drawer", "open_low_top_drawer", "grasp_cream_cheese"],
+            "grasp_cream_cheese": ["grasp_bowl", "grasp_ketchup", "close_low_top_drawer", "open_low_top_drawer",],
             "ungrasp_bowl": [],
             "ungrasp_ketchup": [],
-            "ungrasp_top_drawer": ["open_top_drawer", "close_top_drawer"],
+            "ungrasp_cream_cheese": [],
+
+            "grasp_top_drawer": ["grasp_bowl", "grasp_ketchup",  "open_low_top_drawer", "close_low_top_drawer", "grasp_cream_cheese"],
+            "ungrasp_top_drawer": ["open_low_top_drawer", "close_low_top_drawer"],
+            
+            "close_state_top_drawer": [],
+            "open_state_top_drawer": [],
+            "close_low_top_drawer": ["open_low_top_drawer"],
+            "open_low_top_drawer": ["close_low_top_drawer"],
+            #"close_high_top_drawer": [TODO],
+            #"open_high_top_drawer": [TODO],
 
             "lift_bowl": ["ungrasp_bowl"],
             "lift_ketchup": ["ungrasp_ketchup"],
-
-            "push_top_drawer": ["grasp_ketchup", "grasp_bowl"],
-            "pull_top_drawer": ["grasp_ketchup", "grasp_bowl"],
 
             "place_ketchup_over_plate": ["ungrasp_ketchup"],
             "place_ketchup_over_bowl": ["ungrasp_ketchup"],
             "place_ketchup_over_top_drawer": ["ungrasp_ketchup"],
             "place_ketchup_over_cabinet": ["ungrasp_ketchup"],
 
+            "place_cream_cheese_over_plate": ["ungrasp_cream_cheese"],
+            "place_cream_cheese_over_bowl": ["ungrasp_cream_cheese"],
+            "place_cream_cheese_over_top_drawer": ["ungrasp_cream_cheese"],
+            "place_cream_cheese_over_cabinet": ["ungrasp_cream_cheese"],
+
+
             "place_bowl_over_plate": ["ungrasp_bowl"],
             "place_bowl_over_top_drawer": ["ungrasp_bowl"],
             "place_bowl_over_cabinet": ["ungrasp_bowl"],
 
             # HL task mappings
-            "close_top_drawer": ["grasp_bowl", "grasp_ketchup"],
-            "open_top_drawer": ["grasp_bowl", "grasp_ketchup"],
 
-            "put_bowl_in_top_drawer": ["grasp_ketchup", "grasp_top_drawer"], 
-            "put_bowl_on_plate": ["grasp_ketchup", "grasp_top_drawer", "grasp_top_drawer"], 
-            "put_bowl_on_cabinet": ["grasp_ketchup", "grasp_top_drawer", "grasp_top_drawer"], 
+            "put_bowl_in_top_drawer": ["grasp_ketchup", "close_low_top_drawer", "open_low_top_drawer",], 
+            "put_bowl_on_plate": ["grasp_ketchup", "close_low_top_drawer", "open_low_top_drawer",], 
+            "put_bowl_on_cabinet": ["grasp_ketchup", "close_low_top_drawer", "open_low_top_drawer",], 
 
-            "put_ketchup_in_top_drawer": ["grasp_bowl", "grasp_top_drawer"], 
-            "put_ketchup_on_plate": ["grasp_bowl", "grasp_top_drawer"], 
-            "put_ketchup_on_bowl": ["grasp_bowl", "grasp_top_drawer"], 
-            "put_bowl_on_cabinet": ["grasp_ketchup", "grasp_top_drawer", "grasp_top_drawer"], 
+            "put_ketchup_in_top_drawer": ["grasp_bowl", "close_low_top_drawer", "open_low_top_drawer",], 
+            "put_ketchup_on_plate": ["grasp_bowl", "close_low_top_drawer", "open_low_top_drawer",], 
+            "put_ketchup_on_bowl": ["grasp_bowl", "close_low_top_drawer", "open_low_top_drawer",], 
+            "put_bowl_on_cabinet": ["grasp_ketchup", "close_low_top_drawer", "open_low_top_drawer",], 
 
             # Old experiment
             "turn_on_stove_3": ["grasp_pan", "grasp_moka_pot"],
             "put_pan_on_stove_3": ["grasp_moka_pot", "turn_on_stove_3"],
             "put_moka_pot_on_stove_3": ["grasp_pan", "turn_on_stove_3"],
 
-            "put_yellow_white_mug_in_microwave_6": ["grasp_porcelain_mug", "close_microwave_6"],
-            "close_microwave_6": ["grasp_porcelain_mug", "grasp_yellow_white_mug"],
+            "put_yellow_white_mug_in_microwave_6": ["grasp_porcelain_mug", "close_state_microwave_6"],
+            "close_state_microwave_6": ["grasp_porcelain_mug", "grasp_yellow_white_mug"],
 
             "put_right_moka_pot_on_stove_8": ["grasp_left_moka_pot"],
             "put_left_moka_pot_on_stove_8": ["grasp_moka_pot"],
@@ -92,10 +102,19 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         }
 
         self.task_to_predicate = {
+            "close_state_top_drawer": ["close", "white_cabinet_1_top_region"],
+            "open_state_top_drawer": ["open", "white_cabinet_1_top_region"],
+
+            "close_low_top_drawer": ["closelow", "white_cabinet_1_top_region"],
+            "open_low_top_drawer": ["openlow", "white_cabinet_1_top_region"],
+
+            # HL tasks:
+            "close_high_top_drawer": ["closehigh", "white_cabinet_1_top_region"],
+            "open_high_top_drawer": ["openhigh", "white_cabinet_1_top_region"],
 
             # Old tasks
             "turn_on_stove_3": ["turnon", "flat_stove_1"],
-            "close_microwave_6": ["close", "microwave_1"],
+            "close_state_microwave_6": ["close", "microwave_1"],
             "put_pan_on_stove_3": ["on", "chefmate_8_frypan_1", "flat_stove_1_cook_region"],
             "put_moka_pot_on_stove_3": ["on", "moka_pot_1", "flat_stove_1_cook_region"],
 
@@ -118,6 +137,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
             "ungrasp_bowl": ["ungrasped", "akita_black_bowl_1"],
             "ungrasp_ketchup": ["ungrasped", "ketchup_1"],
+            "ungrasp_cream_cheese": ["ungrasped", "cream_cheese_1"],
             "ungrasp_top_drawer": ["ungrasped", "white_cabinet_1_top_region"],
 
             "lift_bowl": ["lifted", "akita_black_bowl_1"],
@@ -132,12 +152,6 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             "place_bowl_over_top_drawer": ["over", "akita_black_bowl_1", "white_cabinet_1_top_region"],
             "place_bowl_over_cabinet": ["over", "akita_black_bowl_1", "white_cabinet_1_top_side"],
 
-            "push_top_drawer": ["close", "white_cabinet_1_top_region"],
-            "pull_top_drawer": ["open", "white_cabinet_1_top_region"],
-
-            # HL tasks:
-            "close_top_drawer": ["close", "white_cabinet_1_top_region"],
-            "open_top_drawer": ["open", "white_cabinet_1_top_region"],
 
             "put_bowl_in_top_drawer": ["on", "akita_black_bowl_1", "white_cabinet_1_top_region"], 
             "put_bowl_on_plate": ["on", "akita_black_bowl_1", "plate_1"], 
@@ -205,6 +219,8 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                 return "ungrasp_bowl"
             elif predicate[1] == "ketchup_1":
                 return "ungrasp_ketchup"
+            elif predicate[1] == "cream_cheese_1":
+                return "ungrasp_cream_cheese"
             elif predicate[1] == "white_cabinet_1_top_region":
                 return "ungrasp_top_drawer"
             else:
@@ -214,15 +230,42 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                 return "lift_bowl"
             elif predicate[1] == "ketchup_1":
                 return "lift_ketchup"
+            elif predicate[1] == "cream_cheese_1":
+                return "grasp_cream_cheese"
             else:
                 raise Exception(f"Lifting unknown object: {predicate[1]}")
         elif predicate[0] == "open":
-            return "open_top_drawer"
+            if predicate[1] == "white_cabinet_1_top_region":
+                return "open_state_top_drawer"
+            else:
+                raise Exception(f"Unknown object to open: {predicate[1]}")
+        elif predicate[0] == "openlow":
+            if predicate[1] == "white_cabinet_1_top_region":
+                return "open_low_top_drawer"
+            else:
+                raise Exception(f"Unknown object to open: {predicate[1]}")
+        elif predicate[0] == "openhigh":
+            if predicate[1] == "white_cabinet_1_top_region":
+                return "open_high_top_drawer"
+            else:
+                raise Exception(f"Unknown object to open: {predicate[1]}")
         elif predicate[0] == "close":
             if predicate[1] == "white_cabinet_1_top_region":
-                return "close_top_drawer"
+                return "close_state_top_drawer"
             elif predicate[1] == "microwave_1":
-                return "close_microwave_6"
+                return "close_state_microwave_6"
+            else:
+                raise Exception(f"Unknown object to close: {predicate[1]}")
+        elif predicate[0] == "closelow":
+            if predicate[1] == "white_cabinet_1_top_region":
+                return "close_low_top_drawer"
+            else:
+                raise Exception(f"Unknown object to close: {predicate[1]}")
+        elif predicate[0] == "closehigh":
+            if predicate[1] == "white_cabinet_1_top_region":
+                return "close_high_top_drawer"
+            else:
+                raise Exception(f"Unknown object to close: {predicate[1]}")
         elif predicate[0] == "over":
             if predicate[1] == "ketchup_1":
                 if predicate[2] == "plate_1":
@@ -242,6 +285,17 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                     return "place_bowl_over_top_drawer"
                 elif predicate[2] == "white_cabinet_1_top_side":
                     return "place_bowl_over_cabinet"
+                else:
+                    raise Exception(f"Placing object: {predicate[1]} over unknown location {predicate[2]}")
+            elif predicate[1] == "cream_cheese_1":
+                if predicate[2] == "plate_1":
+                    return "place_cream_cheese_over_plate"
+                elif predicate[2] == "akita_black_bowl_1":
+                    return "place_cream_cheese_over_bowl"
+                elif predicate[2] == "white_cabinet_1_top_region":
+                    return "place_cream_cheese_over_top_drawer"
+                elif predicate[2] == "white_cabinet_1_top_side":
+                    return "place_cream_cheese_over_cabinet"
                 else:
                     raise Exception(f"Placing object: {predicate[1]} over unknown location {predicate[2]}")
             else:
@@ -294,7 +348,6 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             elif predicate[1] == "white_yellow_mug_1":
                 if predicate[2] == "microwave_1_heating_region":
                     return "put_yellow_white_mug_in_microwave_6"
-
         elif predicate[0] == "turnon":
             if predicate[1] == "flat_stove_1":
 
@@ -402,7 +455,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         elif "KITCHEN_SCENE6_close_the_microwave" in self.bddl_file_name:
             inadm_tasks = ["grasp_porcelain_mug", "grasp_yellow_white_mug"]
         elif "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave" in self.bddl_file_name:
-            inadm_tasks = ["grasp_porcelain_mug", "close_microwave_6"]
+            inadm_tasks = ["grasp_porcelain_mug", "close_state_microwave_6"]
         elif "KITCHEN_SCENE8_put_the_left_moka_pot_on_the_stove" in self.bddl_file_name:
             inadm_tasks = ["grasp_moka_pot"]
         elif "KITCHEN_SCENE8_put_the_right_moka_pot_on_the_stove" in self.bddl_file_name:
@@ -433,6 +486,8 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
         return True, None
 
+    def all_subgoals_completed(self):
+        return self.current_subgoal_idx >= len(self.parsed_problem['subgoal_states'])
 
     def step(self, action):            
 
@@ -461,29 +516,29 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                     info["inadmissible_task"] = None
                 else:
                     info["inadmissible_task"] = inadm_task
-                    print("HARD EVAL FAILED, INADMISSIBLE TASK: ", inadm_task)
+                    print("HARD EVAL FAILED, INADMISSIBLE TASK: ", inadm_task, " for task ", self.parsed_problem["subgoal_states"][self.current_subgoal_idx])
 
                 if done_subgoal:
                     info['subgoal_completed'] = True
+                    print("Completed subgoal! ", self.parsed_problem["subgoal_states"][self.current_subgoal_idx], " done? ", done)
+
                     self.current_subgoal_idx += 1
                     self.update_init_obj_poses()
                 else:
                     info['subgoal_completed'] = False
                 
-
                 if self.current_subgoal_idx >= len(self.parsed_problem['subgoal_states']):
                     obs['subgoal_language'] = None
                     all_subgoals_done = True
                 else:
                     obs['subgoal_language'] = self.parsed_problem['subgoal_instructions'][self.current_subgoal_idx]
 
-            #print("Final result: ", done, all_subgoals_done)
 
         return obs, reward, done and all_subgoals_done, info
 
 
     def update_init_obj_poses(self):
         for obj in self.object_states_dict.values():
-            if isinstance(obj, ObjectState):
+            if isinstance(obj, ObjectState) or isinstance(obj, SiteObjectState):
                 obj.set_init_pos()
                     
