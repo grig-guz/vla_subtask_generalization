@@ -22,8 +22,10 @@ def temp_seed(seed):
 
 def run_validation(policy, eval_type, model_name, global_step, processors=None, config_path="utils/med_tasks_config.yaml"):
     
-
-    if 'libero' in eval_type:
+    if 'single' in eval_type:
+        from run_libero_eval_seq import evaluate_libero_policy
+        pass
+    elif 'libero' in eval_type:
         from run_libero_eval import evaluate_libero_policy
 
         if 'low_level' in eval_type:

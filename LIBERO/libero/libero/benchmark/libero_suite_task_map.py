@@ -6,7 +6,7 @@ libero_task_map = {
         "KITCHEN_SCENE5_put_the_black_bowl_on_top_of_the_cabinet",
         "KITCHEN_SCENE5_put_the_ketchup_in_the_top_drawer_of_the_cabinet"
     ],
-    "libero_high_level": [
+    "libero_high_level_hard": [
         "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it",
         "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it",
         "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
@@ -16,7 +16,7 @@ libero_task_map = {
         "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove",
         "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it"
     ],
-    "libero_conj": [
+    "libero_conj_hard": [
         "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it",
         "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it",
         "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
