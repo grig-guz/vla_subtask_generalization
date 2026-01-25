@@ -43,6 +43,10 @@ class ObjectState(BaseObjectState):
         self.has_turnon_affordance = hasattr(
             self.env.get_object(self.object_name), "turn_on"
         )
+        self.has_open_close_affordance = hasattr(
+            self.env.get_object(self.object_name), "is_open"
+        )
+
         self.subtask_init_pos = None
         self.is_grasped_init = None
         self.is_turned_on_init = None
@@ -54,10 +58,6 @@ class ObjectState(BaseObjectState):
         if self.has_turnon_affordance:
             self.is_turned_on_init = self.turn_on_state()
 
-    def check_ungrasped(self):
-        object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
-        return not self.check_grasped() and \
-                np.linalg.norm(self.subtask_init_pos[:2] - object_pos[:2]) < 0.125
         
 
     def lifted(self):
@@ -78,9 +78,19 @@ class ObjectState(BaseObjectState):
         object_2 = self.env.get_object(other.object_name)
         return self.env.check_contact(object_1, object_2)
 
+    def check_ungrasped(self):
+        if self.is_grasped_init == None:
+            return False
+
+        object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
+        #print(self.is_grasped_init, not self.check_grasped_state(), np.linalg.norm(self.subtask_init_pos[:2] - object_pos[:2]) < 0.125)
+        #return not self.check_grasped_state() and \
+        return not self.env.check_contact(self.env.get_object(self.object_name), self.env.robots[0].gripper) and \
+                np.linalg.norm(self.subtask_init_pos[:2] - object_pos[:2]) < 0.15
+
     def check_grasped(self):
         #print(f"Checking grasped for object {self.object_name}, grasped before: {self.is_grasped_init}, type?: {type(self.is_grasped_init)}")
-        if not (isinstance(self.is_grasped_init, bool) or isinstance(self.is_grasped_init, np.bool_)):
+        if self.is_grasped_init == None:
             return False
 
         #print(f"Object {self.object_name}, grasped before: {self.is_grasped_init}, after: {self.check_grasped_state()}")
@@ -121,6 +131,7 @@ class ObjectState(BaseObjectState):
         other_object_position = self.env.sim.data.body_xpos[
             self.env.obj_body_id[other.object_name]
         ]
+
         return (
             (this_object_position[2] <= other_object_position[2])
             and self.check_contact(other)
@@ -216,6 +227,12 @@ class SiteObjectState(BaseObjectState):
             self.env.fixtures_dict if self.is_fixture else self.env.objects_dict
         )
         self.object_state_type = "site"
+        self.has_open_close_affordance = hasattr(
+            self.env.get_object(self.parent_name), "is_open"
+        )
+        self.is_close_init = None
+        self.is_open_init = None
+
 
     def get_geom_state(self):
         object_pos = self.env.sim.data.get_site_xpos(self.object_name)
@@ -304,18 +321,50 @@ class SiteObjectState(BaseObjectState):
         for joint in self.env.object_sites_dict[self.object_name].joints:
             self.env.sim.data.set_joint_qpos(joint, qpos)
 
-    def is_open(self):
+
+    def is_open_high(self):
+        if self.is_open_init == None:
+            return False
+        return self.is_open_state()# and self.check_ungrasped()
+    
+    def is_close_high(self):
+        if self.is_close_init == None:
+            return False
+        return self.is_close_state()# and self.check_ungrasped()
+
+    def is_open_low(self):
+        if self.is_open_init == None:
+            return False
+        return not self.is_open_init and self.is_open_state() and self.check_grasped()
+    
+    def is_close_low(self):
+        if self.is_close_init == None:
+            return False
+        return not self.is_close_init and self.is_close_state() and self.check_grasped()
+
+    def is_close_state(self):
         for joint in self.env.object_sites_dict[self.object_name].joints:
             qpos_addr = self.env.sim.model.get_joint_qpos_addr(joint)
             qpos = self.env.sim.data.qpos[qpos_addr]
+
+            if not (self.env.get_object(self.parent_name).is_close(qpos)):
+                return False
+        return True
+
+    def is_open_state(self):
+        for joint in self.env.object_sites_dict[self.object_name].joints:
+            qpos_addr = self.env.sim.model.get_joint_qpos_addr(joint)
+            qpos = self.env.sim.data.qpos[qpos_addr]
+
             if self.env.get_object(self.parent_name).is_open(qpos):
                 return True
         return False
 
-    def is_close(self):
-        for joint in self.env.object_sites_dict[self.object_name].joints:
-            qpos_addr = self.env.sim.model.get_joint_qpos_addr(joint)
-            qpos = self.env.sim.data.qpos[qpos_addr]
-            if not (self.env.get_object(self.parent_name).is_close(qpos)):
-                return False
-        return True
+    def set_init_pos(self):
+        if self.has_open_close_affordance:
+
+            self.is_close_init = self.is_close_state()
+            self.is_open_init = self.is_open_state()
+            #if self.object_name == "white_cabinet_1_top_region":
+           #     breakpoint()
+            #print("setting init pos for ", self.object_name, self.is_close_init, self.is_open_init)

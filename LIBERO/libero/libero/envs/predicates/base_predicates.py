@@ -91,7 +91,7 @@ class Ungrasped(UnaryAtomic):
 
 class Over(BinaryAtomic):
     def __call__(self, arg1, arg2):
-        print(arg1.object_name, arg2.object_name)
+        #print(arg1.object_name, arg2.object_name)
         return arg2.check_over(arg1)
 
 
@@ -112,14 +112,30 @@ class PrintJointState(UnaryAtomic):
         return True
 
 
-class Open(UnaryAtomic):
+class OpenState(UnaryAtomic):
     def __call__(self, arg):
-        return arg.is_open()
+        return arg.is_open_state()
 
 
-class Close(UnaryAtomic):
+class CloseState(UnaryAtomic):
     def __call__(self, arg):
-        return arg.is_close()
+        return arg.is_close_state()
+
+class OpenHigh(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.is_open_high()
+
+class CloseHigh(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.is_close_high()
+
+class OpenLow(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.is_open_low()
+
+class CloseLow(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.is_close_low()
 
 
 class TurnOn(UnaryAtomic):
