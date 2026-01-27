@@ -13,6 +13,7 @@ from copy import deepcopy
 import numpy as np
 from utils.shared_utils import temp_seed
 from random import sample
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ class GraspRigid(LiberoTask):
                 self.target_obj: "floor"
             }, 
             {
-                self.target_obj: "cabinet_top"
+                self.target_obj: "cabinet"
             }
             #{
             #    self.target_obj: "middle_drawer",
@@ -205,35 +206,36 @@ class PlaceGraspedObjOver(LiberoTask):
 
     def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
         super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
+        if not self.target_obj:
+            self.target_obj = np.random.choice(self.all_rigid_objs, size=1)[0]
+
         if not self.target_loc:
             self.target_loc = np.random.choice(self.all_locations, size=1)[0]
         
+
     def check_preconditions(self, state):
-        for obj in self.all_rigid_objs:
-            if state[obj + "_lifted"] == 1 and obj != self.target_loc and state[obj] != self.target_loc:
-                if self.target_loc in ["plate", "black_bowl"]:
-                    if state[self.target_loc] in ["floor", "cabinet_top"]:
-                        return True
-                elif self.target_loc == "top_drawer":
-                    if state['top_drawer'] == 'open':
-                        return True
-                #elif self.target_loc == "middle_drawer":
-                #    if state['top_drawer'] == 'closed' and state['middle_drawer'] == 'open':
-                #        return True
-                elif self.target_loc == 'cabinet_top':
+        if state[self.target_obj + "_lifted"] == 1 and self.target_obj != self.target_loc and state[self.target_obj] != self.target_loc:
+            if self.target_loc in ["plate", "bowl"]:
+                if state[self.target_loc] in ["floor", "cabinet"]:
                     return True
-                else:
-                    raise Exception("Unknown placement location!")
+            elif self.target_loc == "top_drawer":
+                if state['top_drawer'] == 'open':
+                    return True
+            #elif self.target_loc == "middle_drawer":
+            #    if state['top_drawer'] == 'closed' and state['middle_drawer'] == 'open':
+            #        return True
+            elif self.target_loc == 'cabinet':
+                return True
+            else:
+                raise Exception("Unknown placement location!")
         return False
 
     def update_state(self, state):
-        for obj in self.all_rigid_objs:
-            if state[obj + "_lifted"] == 1:
-                state[obj] = self.target_loc
-                return state
+        state[self.target_obj] = self.target_loc
+        return state
 
     def __str__(self):
-        return "place_grasped_obj_over_" + self.target_loc
+        return "place_" + self.target_obj + "_over_" + self.target_loc
 
 
 class LiftGraspedObj(LiberoTask):
@@ -242,21 +244,20 @@ class LiftGraspedObj(LiberoTask):
         super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
         # Just go over state, check if a block is grasped, then check if it is lifted.
         # That's it.
+        if not self.target_obj:
+            self.target_obj = np.random.choice(self.all_rigid_objs, size=1)[0]
 
     def check_preconditions(self, state):
-        for obj in self.all_rigid_objs:
-            if state['grasped'] == obj and state[obj + "_lifted"] == 0:
-                return True
+        if state['grasped'] == self.target_obj and state[self.target_obj + "_lifted"] == 0:
+            return True
         return False
     
     def update_state(self, state):
-        for obj in self.all_rigid_objs:
-            if state['grasped'] == obj and state[obj + "_lifted"] == 0:
-                state[obj + "_lifted"] = 1
-                return state
+        state[self.target_obj + "_lifted"] = 1
+        return state
             
     def __str__(self):
-        return "lift_grasped_obj"
+        return "lift_" + self.target_obj
 
 
 class MoveDrawer(LiberoTask):
@@ -281,9 +282,9 @@ class MoveDrawer(LiberoTask):
 
     def __str__(self):
         if self.direction == "open":
-            return "open_" + self.target_obj
+            return "open_low_" + self.target_obj
         else:
-            return "close_" + self.target_obj
+            return "close_low_" + self.target_obj
 
 
 def get_sequences_for_state2(args):
@@ -293,11 +294,11 @@ def get_sequences_for_state2(args):
     seq_len = 5
     results = []
     # PlaceGraspedBlockOver for task diversity
-    all_tasks = [GraspRigid, GraspArticulated, Ungrasp, PlaceGraspedObjOver, PlaceGraspedObjOver, LiftGraspedObj, MoveDrawer, MoveDrawer]
-    all_rigid_objs = ["black_bowl", "ketchup"]
+    all_tasks = [GraspRigid, GraspRigid, GraspArticulated, Ungrasp, Ungrasp, PlaceGraspedObjOver, PlaceGraspedObjOver, LiftGraspedObj, LiftGraspedObj, MoveDrawer, MoveDrawer]
+    all_rigid_objs = ["bowl", "ketchup"]
     all_articulated_objects = ["top_drawer"]#, "middle_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
-    all_locations = ["cabinet_top", "top_drawer", "plate", "black_bowl"]#, "middle_drawer"]
+    all_locations = ["cabinet", "top_drawer", "plate", "bowl"]#, "middle_drawer"]
 
     while len(results) < num_sequences:
         seq = np.random.choice(all_tasks, size=seq_len, replace=False)
@@ -305,8 +306,6 @@ def get_sequences_for_state2(args):
         
         if check_sequence(state, seq):
             new_seq = tuple([str(task) for task in seq])
-            if 'place_grasped_block_over_table' in new_seq:
-                print(new_seq)
             results.append(new_seq)
     return results
 
@@ -336,11 +335,11 @@ def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
     possible_conditions = {
         "top_drawer": ["closed", "open"],
         #"middle_drawer": ["closed", "open"],
-        "black_bowl": ["floor"],
+        "bowl": ["floor"],
         "plate": ["floor"],
         "ketchup": ["floor"],
         "grasped": [0],
-        "black_bowl_lifted": [0],
+        "bowl_lifted": [0],
         "ketchup_lifted": [0],
     }
 
@@ -375,29 +374,47 @@ def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
 
     return results
 
+def store_sequences_init_states(store_path, results):
+    from libero.libero.envs import OffScreenRenderEnv
+    
 
-def generate_pyhash_seeds():
-    import pyhash
-    hasher = pyhash.fnv1_32()
-    results = get_low_level_random_sequences(1000)
-    seeds = {}
+    env_args = {"bddl_file_name": "/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/libero_single/KITCHEN_SCENE5_close_the_top_drawer_of_the_cabinet.bddl", 
+                    "camera_heights": 256, 
+                    "camera_widths": 256}
+    env_drawer_open = OffScreenRenderEnv(**env_args)
+    env_drawer_open.seed(0)
 
-    for initial_state, _, seq in results:
-        seed = hasher(str(initial_state.values()))
-        init_state_idx = []
-        for key, value in initial_state.items():
-            init_state_idx.append(key)
-            init_state_idx.append(value)
+    env_args = {"bddl_file_name": "/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/libero_single/KITCHEN_SCENE5_open_the_top_drawer_of_the_cabinet.bddl", 
+                    "camera_heights": 256, 
+                    "camera_widths": 256}
+    env_drawer_closed = OffScreenRenderEnv(**env_args)
+    env_drawer_closed.seed(0)
 
-        seeds[tuple(init_state_idx)] = seed
+    results_states = []    
+    for initial_state, sub, seq in results:
+
+        if initial_state["top_drawer"] == "open":
+            env = env_drawer_open
+        else:
+            env = env_drawer_closed
+        #before_reset = time.time()
+        env.reset()
+        #print(f"time to reset the env: {time.time() - before_reset}")
+        state = env.env.sim.get_state().flatten()
+        #print(f"time to reset the env and get the state: {time.time() - before_reset}")
+        results_states.append((initial_state, sub, seq, state))
+    
     import pickle
-    with open('utils/low_sequence_seeds', 'wb') as f:
-        pickle.dump(seeds, f)
+    with open(store_path, 'wb') as f:
+        pickle.dump(results_states, f)
 
 
 if __name__ == "__main__":
     print("getting sequences")
-    results = get_low_level_random_sequences(400)
+    results = get_low_level_random_sequences(1000)
+    store_path = "utils/libero_low_sequences_init_states"
+    store_sequences_init_states(store_path, results)
+
     high_level_counter = Counter()
     low_level_counter = Counter()
     print("printing res")

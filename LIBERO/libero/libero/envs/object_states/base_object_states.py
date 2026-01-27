@@ -183,6 +183,15 @@ class ObjectState(BaseObjectState):
                 return False
         return True
 
+    def is_close_state(self):
+        for joint in self.env.get_object(self.object_name).joints:
+            qpos_addr = self.env.sim.model.get_joint_qpos_addr(joint)
+            qpos = self.env.sim.data.qpos[qpos_addr]
+            if not (self.env.get_object(self.object_name).is_close(qpos)):
+                return False
+        return True
+
+
         
     def turn_on(self):
         

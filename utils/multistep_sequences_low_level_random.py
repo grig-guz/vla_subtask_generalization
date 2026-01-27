@@ -188,6 +188,7 @@ def get_sequences_for_state2(args):
         seq = np.random.choice(list(tasks_low_level.keys()), size=seq_len, replace=False)
         if check_sequence(state, seq):
             results.append(seq)
+            
     return results
 
 

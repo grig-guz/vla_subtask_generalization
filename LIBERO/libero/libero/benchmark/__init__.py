@@ -57,10 +57,10 @@ libero_suites = [
     "libero_goal",
     "libero_90",
     "libero_10",
-    "libero_high_level",
+    "libero_high_level_hard",
     "libero_low_level",
     "libero_low_level_hard",
-    "libero_conj",
+    "libero_conj_hard",
     "libero_single"
 ]
 
@@ -118,7 +118,7 @@ class Benchmark(abc.ABC):
 
     def _make_benchmark(self):
         tasks = list(task_maps[self.name].values())
-        if self.name in ["libero_90", "libero_high_level", "libero_low_level", "libero_low_level_hard", "libero_conj", "libero_single"]:
+        if self.name in ["libero_90", "libero_high_level_hard", "libero_low_level", "libero_low_level_hard", "libero_conj_hard", "libero_single"]:
             self.tasks = tasks
         else:
             print(f"[info] using task orders {task_orders[self.task_order_index]}")
@@ -224,10 +224,10 @@ class LIBERO_100(Benchmark):
 
 
 @register_benchmark
-class LIBERO_HIGH_LEVEL(Benchmark):
+class LIBERO_HIGH_LEVEL_HARD(Benchmark):
     def __init__(self, task_order_index=0):
         super().__init__(task_order_index=task_order_index)
-        self.name = "libero_high_level"
+        self.name = "libero_high_level_hard"
         self._make_benchmark()
 
 
@@ -247,10 +247,10 @@ class LIBERO_LOW_LEVEL_HARD(Benchmark):
 
 
 @register_benchmark
-class LIBERO_CONJ(Benchmark):
+class LIBERO_CONJ_HARD(Benchmark):
     def __init__(self, task_order_index=0):
         super().__init__(task_order_index=task_order_index)
-        self.name = "libero_conj"
+        self.name = "libero_conj_hard"
         self._make_benchmark()
 
 @register_benchmark
