@@ -95,6 +95,7 @@ class OpenCloseSampler(ObjectPropertySampler):
         assert self.joint_ranges[0] <= self.joint_ranges[1]
         self.name = name
         super().__init__(name, mujoco_objects)
+        self.name = name
 
     def sample(self):
         if self.state_type == "close" and self.name == "white_cabinet_1_top_region":
