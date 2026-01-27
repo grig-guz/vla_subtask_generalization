@@ -21,10 +21,38 @@ def temp_seed(seed):
 
 
 def run_validation(policy, eval_type, model_name, global_step, processors=None, config_path="utils/med_tasks_config.yaml"):
-    
+
     if 'single' in eval_type:
-        from run_libero_eval_seq import evaluate_libero_policy
-        pass
+        from run_libero_eval_seq import evaluate_libero_policy_seq, GenerateConfig
+        cfg = GenerateConfig()
+        cfg.num_sequences = 50
+        cfg.eval_type = eval_type
+        cfg.num_videos = 0
+        cfg.video_save_dir = ''
+        cfg.num_steps_wait = 10
+        cfg.model = model_name
+        cfg.ep_len = 500
+        cfg.action_horizon = 10
+
+        if "conj" in eval_type or "high" in eval_type:
+            with open('utils/libero_high_sequences_init_states', 'rb') as f:
+                eval_sequences = pickle.load(f)
+        elif "low" in eval_type:
+            with open('utils/libero_low_sequences_init_states', 'rb') as f:
+                eval_sequences = pickle.load(f)
+        else:
+            raise Exception(f"Unknown eval type for single libero env: {eval_type}")
+
+
+        _, new_rate, _, _ = evaluate_libero_policy_seq(
+            cfg=cfg, 
+            model=policy, 
+            processors=processors, 
+            eval_sequences=eval_sequences, 
+            counters=None, 
+            num_sequences=num_sequences
+        )
+
     elif 'libero' in eval_type:
         from run_libero_eval import evaluate_libero_policy
 
@@ -48,7 +76,7 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
     else:
         from run_calvin_eval import evaluate_policy
         from utils.calvin_utils import get_calvin_env
-
+        
         env, calvin_cfg = get_calvin_env(
             train_cfg_path=None,
             merged_cfg_path=config_path,

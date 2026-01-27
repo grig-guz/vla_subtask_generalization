@@ -47,6 +47,7 @@ libero/libero/envs/problems/libero_floor_manipulation.py
 libero/libero/envs/problems/libero_kitchen_tabletop_manipulation.py
 libero/libero/envs/problems/libero_living_room_tabletop_manipulation.py
 libero/libero/envs/problems/libero_sequential_kitchen_tabletop_manipulation.py
+libero/libero/envs/problems/libero_sequential_living_room_tabletop_manipulation.py
 libero/libero/envs/problems/libero_study_tabletop_manipulation.py
 libero/libero/envs/problems/libero_tabletop_manipulation.py
 libero/libero/envs/regions/__init__.py

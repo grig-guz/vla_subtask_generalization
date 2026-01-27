@@ -34,15 +34,11 @@ class GenerateConfig:
     #################################################################################################################
     model: str = "octo"                    # Model family
     pretrained_checkpoint: Union[str, Path] = ""     # Pretrained checkpoint path
-    load_in_8bit: bool = False                       # (For OpenVLA only) Load with 8-bit quantization
-    load_in_4bit: bool = False                       # (For OpenVLA only) Load with 4-bit quantization
-    center_crop: bool = True                         # Center crop? (if trained w/ random crop image aug)
-    task_suite_name: str = "libero_spatial"
     num_sequences: int = 1000
     num_videos: int = 0
     num_steps_wait: int = 10                         # Number of steps to wait for objects to stabilize in sim
-    num_trials_per_task: int = 50                    # Number of rollouts per task
-
+    eval_type: str = ""
+    ep_len: int = 500
     #################################################################################################################
     # CALVIN environment-specific parameters
     #################################################################################################################
@@ -59,6 +55,15 @@ class GenerateConfig:
     wandb_project: str = "YOUR_WANDB_PROJECT"        # Name of W&B project to log to (use default!)
     wandb_entity: str = "YOUR_WANDB_ENTITY"          # Name of entity to log under
     seed: int = 7                                    # Random Seed (for reproducibility)
+
+def count_success(results):
+    count = Counter(results)
+    step_success = []
+    for i in range(1, 6):
+        n_success = sum(count[j] for j in reversed(range(i, 6)))
+        sr = n_success / len(results)
+        step_success.append(sr)
+    return step_success
 
 
 def get_libero_image(obs, resize_size):
@@ -88,198 +93,288 @@ def save_rollout_video(video_save_dir, rollout_images, idx, success, task_descri
         print(f"Saved rollout MP4 at path {mp4_path}")
         return mp4_path
 
+def evaluate_libero_policy_seq(cfg, model, processors, eval_sequences, counters):
+    from libero.libero.envs import OffScreenRenderEnv
+    if counters is not None:
+        counters["errors"] = []
 
-def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, action_horizon, policy, processors=None, num_steps_wait=10, timestep=-1, video_save_dir=None):
-    from libero.libero import benchmark
+    # video stuff
+    if cfg.num_videos > 0:
+        rollout_video = RolloutVideo(
+            logger=logger,
+            empty_cache=False,
+            log_to_file=True,
+            save_dir=cfg.video_save_dir,
+            resolution_scale=1,
+        )
+    else:
+        rollout_video = None
 
-    benchmark_dict = benchmark.get_benchmark_dict()
-    task_suite = benchmark_dict[task_suite_name]()
-    num_tasks_in_suite = task_suite.n_tasks
-    print(f"Task suite: {task_suite_name}")
+    results = []
+    if cfg.num_sequences < len(eval_sequences):
+        eval_sequences = eval_sequences[:cfg.num_sequences]
+    
 
-    total_episodes, total_successes = 0, 0
-    per_task_rates = {}
-    failure_dict = defaultdict(list)
+    env_args = {"bddl_file_name": "/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/libero_single/KITCHEN_SCENE5_close_the_top_drawer_of_the_cabinet.bddl", 
+                    "camera_heights": 256, 
+                    "camera_widths": 256}
+    env = OffScreenRenderEnv(**env_args)
+    env.seed(0)
 
-    for task_id in tqdm(range(num_tasks_in_suite)):
-        # Get task
-        task = task_suite.get_task(task_id)
 
-        # Get default LIBERO initial states
-        initial_states = task_suite.get_task_init_states(task_id)
+    eval_sequences = tqdm(eval_sequences, position=0, leave=True)
+    
+    for i, (_, high_level_task, eval_seq, initial_state) in enumerate(eval_sequences):
 
-        # Initialize LIBERO environment and task description
-        env, lang_annotation = get_libero_env(task, resolution=256)
+        record = i < cfg.num_videos
+        result = evaluate_sequence(
+            eval_sequence=eval_seq, 
+            i=i,
+            initial_state=initial_state, 
+            high_level_task=high_level_task,
+            cfg=cfg,
+            model=model, 
+            processors=processors,
+            env=env, 
+            record=record,
+            rollout_video=rollout_video,
+            counters=counters,
+        )
+        print("Result: ", result)
+        results.append(result)
 
-        hard_eval = False
-        if 'hard' in task.problem_folder:
-            hard_eval = True
-            env.env.set_hard_validation(hard_eval)
+        if record:
+            rollout_video.write_to_tmp()
 
-        if model_name == 'octo':
-            goal = policy.create_tasks(texts=[lang_annotation])
-            from octo.utils.train_callbacks import supply_rng
-            policy_fn = supply_rng(
-                    partial(
-                        policy.sample_actions,
-                        unnormalization_statistics=policy.dataset_statistics["action"],
-                    ),
-                )
-            window_size = action_horizon
-            act_step = action_horizon
-        elif model_name == 'cogact':
-            window_size = 10
-            act_step = 10
-        elif model_name == 'pi0_fast':
-            window_size = 10
-            act_step = 10
-        elif model_name in ['smolvla', 'groot', 'pi05']:
-            window_size = 1
-            act_step = 1
+        success_rates = count_success(results)
+        average_rate = sum(success_rates) / len(success_rates) * 5
+        description = " ".join([f"{i + 1}/5 : {v * 100:.1f}% |" for i, v in enumerate(success_rates)])
+        description += f" Average: {average_rate:.1f} |"
+        eval_sequences.set_description(description)
 
-        # Start episodes
-        task_episodes, task_successes = 0, 0
-        for episode_idx in tqdm(range(num_trials_per_task)):
-            print(f"\nTask: {lang_annotation}")
-            if model_name in ['cogact', 'smolvla', 'groot', 'pi05']:
-                policy.reset()
-
-            # Reset environment
-            env.reset()
-
-            # Set initial states
-            obs = env.set_init_state(initial_states[episode_idx])
-
-            # Setup
-            t = 0
-            replay_images = []
-            max_steps = 500
-
-            print(f"Starting episode {task_episodes+1}...")
-            past_obs = None
-            while t < max_steps + num_steps_wait:
-                # IMPORTANT: Do nothing for the first few timesteps because the simulator drops objects
-                # and we need to wait for them to fall
-                if t < num_steps_wait:
-                    obs, reward, done, info = env.step(get_libero_dummy_action())
-                    t += 1
-                    past_obs = obs
-                    continue
-                
-                resize_size = 224
-
-                # Save preprocessed image for replay video
-                replay_images.append(get_libero_image(obs, resize_size))
-
-                primary_img = obs['agentview_image'][::-1, ::-1]
-                #wrist_img = 
-                state = np.concatenate((obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"]))
-                if act_step > 0 and act_step % window_size == 0:
-                    act_step = 0
-                    if model_name == 'octo':
-                        static_2 = resize_image(primary_img, (256, 256), primary=True)
-                        if past_obs:
-                            static_1 = resize_image(past_obs['agentview_image'][::-1,::-1], (256, 256), primary=True)
-                            primary_img_stacked = np.stack([static_1, static_2])
-                            timestep_pad_mask = np.array([[True, True]])
-                        else:
-                            primary_img_stacked = np.stack([np.zeros((256, 256, 3)), static_2])
-                            timestep_pad_mask = np.array([[False, True]])
-
-                        pad_mask_dict = {
-                            "image_primary": np.array([[True, True]]),
-                            "timestep": np.array([[False, False]]),
-                        }
-                        
-                        observation = {
-                                "image_primary": np.expand_dims(primary_img_stacked, 0),  # uint8
-                                "timestep_pad_mask": timestep_pad_mask,
-                                "pad_mask_dict": pad_mask_dict,
-                                "timestep": np.array([[t-1, t]]),
-                        }
-                        action_buffer = policy_fn(observation, goal)
-                        action_buffer = np.array(action_buffer[0])
-                        action = action_buffer[act_step]
-                    elif model_name == 'cogact':
-                        action_buffer = policy.step(image=primary_img, task_description=lang_annotation)
-                        action = np.array(action_buffer[act_step])
-                    elif model_name == 'pi0_fast':
-                        from openpi_client import image_tools
-                        img = np.ascontiguousarray(primary_img)
-                        img = image_tools.convert_to_uint8(
-                            image_tools.resize_with_pad(img, 224, 224)
-                        )
-                        inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
-                        action_buffer = policy.infer(inputs)["actions"]
-                        action = action_buffer[act_step]
-                    elif model_name in ['smolvla', 'groot', 'pi05']:
-                        preprocessor, postprocessor = processors
-                        primary_img = torch.permute(torch.tensor(primary_img.copy(), device="cuda:0", dtype=torch.float32), (2, 0, 1)).unsqueeze(0)
-                        observation = {
-                            "observation.images.camera1": primary_img.div(255),
-                            "observation.images.camera2": torch.zeros(((1, 3, 256, 256)), device="cuda:0"),
-                            #'observation.images.camera2_is_pad': torch.tensor([True], device="cuda:0"),
-                            "observation.state": torch.tensor(state, dtype=torch.float32, device="cuda:0"),
-                            "task": lang_annotation
-                        }
-                        proc_observation = preprocessor(observation)
-                        action_buffer = model.select_action(proc_observation)
-                        # LeRobot handles action chunks on its own
-                        action_buffer = np.array(postprocessor(action_buffer))
-                        action = action_buffer[0]
-                        action = binarize_gripper_action(action)
-                    else:
-                        raise Exception("Unknown model!")
-                else:
-                    action = action_buffer[act_step]
-
-                
-                act_step += 1
-                if model_name in ['octo', 'cogact']:
-                    action = normalize_gripper_action(action)
-                    action = invert_gripper_action(action)
-
-                # Execute action in environment
-                past_obs = obs
-                obs, reward, done, info = env.step(action.tolist())
-
-                if not info['hard_eval_passed']:
-                    failure_dict[lang_annotation].append(info["inadmissible_task"])
-                    break
-
-                if done:
-                    failure_dict[lang_annotation].append("success")
-                    task_successes += 1
-                    total_successes += 1
-                    break
-                t += 1
-                
-            if t == max_steps + num_steps_wait:
-                failure_dict[lang_annotation].append("timeout")
-
-            task_episodes += 1
-            total_episodes += 1
-
-            # Save a replay video of the episode
-            save_rollout_video(
-                video_save_dir, replay_images, total_episodes, success=done, task_description=lang_annotation, timestep=timestep
-            )
-
-            # Log current results
-            print(f"Success: {done}")
-            print(f"# episodes completed so far: {total_episodes}")
-            print(f"# successes: {total_successes} ({total_successes / total_episodes * 100:.1f}%)")
+    if cfg.num_videos > 0:
+        # log rollout videos
+        rollout_video._log_videos_to_file(0, save_as_video=False)
         
+    if counters is not None:
+        for key, counter in counters.items():
+            print(key, counter)
 
-        per_task_rates[lang_annotation] = float(task_successes) / float(task_episodes)
-        # Log final results
-        print(f"Current task success rate: {per_task_rates[lang_annotation]}")
-        print(f"Current total success rate: {float(total_successes) / float(total_episodes)}")
+    return results, average_rate, success_rates, counters
 
 
-    total_rate = float(total_successes) / float(total_episodes)
+def evaluate_sequence(
+    eval_sequence, i, initial_state, high_level_task, cfg, model, processors, env, record, rollout_video, 
+    counters
+):
+    if counters is not None:
+        counters["errors"].append([])
 
-    return total_rate, per_task_rates, failure_dict
+
+    env.reset()
+    env.set_init_state(initial_state)
+    env.env.set_seq_evaluation(False)
+
+    t = 0
+    if t < cfg.num_steps_wait:
+        obs, reward, done, info = env.step(get_libero_dummy_action())
+        t += 1
+        past_obs = obs
+
+    if record:
+        caption = " | ".join(eval_sequence)
+        rollout_video.new_video(tag=get_video_tag(i), caption=caption)
+
+    success_counter = 0
+    print("Evaluating sequence: ", eval_sequence)
+
+    observations = (obs, past_obs)
+
+    for subtask in eval_sequence:
+        env.env.parsed_problem["goal_state"] = [env.env.task_to_predicate[subtask]]
+        
+        if cfg.eval_type in ['train_libero_single_conj']:
+            lang_annotation = ", then ".join([env.env.task_to_lang[low_subtask] for low_subtask in env.env.task_to_subtasks[subtask]])
+        else:
+            lang_annotation = env.env.task_to_lang[subtask]
+
+        print(f"Evaluating task {subtask} with lang {lang_annotation}")
+        
+        if counters is not None:
+            counters['low_level_started'][subtask] += 1
+
+        if record:
+            rollout_video.new_subtask()
+
+        success, observations = rollout(
+            observations=observations,
+            task=subtask,
+            lang_annotation=lang_annotation,
+            cfg=cfg,
+            model=model,
+            processors=processors,
+            env=env, 
+            record=record, 
+            rollout_video=rollout_video,
+            counters=counters
+        )
+
+        if record:
+            rollout_video.draw_outcome(success)
+        if success:
+            if counters is not None:
+                counters['low_level_completed'][subtask] += 1
+            success_counter += 1
+        else:
+            return success_counter
+        
+    return success_counter
+
+
+def rollout(observations, task, lang_annotation, cfg, model, processors, env, record=False, rollout_video=None, counters=None):
+    
+    goal = None
+    if cfg.model == 'octo':
+        from octo.utils.train_callbacks import supply_rng
+        policy_fn = supply_rng(
+                partial(
+                    model.sample_actions,
+                    unnormalization_statistics=model.dataset_statistics["action"],
+                ),
+            )
+        goal = model.create_tasks(texts=[lang_annotation])
+        model = policy_fn
+    elif cfg.model == 'cogact':
+        model.reset()
+
+    window_size = cfg.action_horizon
+    act_step = cfg.action_horizon
+
+    if cfg.model in ['smolvla', 'groot', 'pi05']:
+        window_size = 1
+        act_step = 1
+        model.config.n_action_steps = 10
+        model.reset()
+        
+    action_buffer = None
+    obs, past_obs = observations
+
+    for step in range(cfg.ep_len):
+        
+        action, action_buffer, act_step = get_action(
+            cfg=cfg,
+            model=model,
+            processors=processors,
+            obs=obs,
+            past_obs=past_obs,
+            lang_annotation=lang_annotation,
+            goal=goal,
+            act_step=act_step,
+            action_buffer=action_buffer,
+            window_size=window_size,
+            step=step
+        )
+        act_step += 1
+        past_obs = obs
+        obs, _, done, info = env.step(action)
+
+        if record:
+            # update video
+            frame_aug = torch.zeros((3, 256, 512))
+            resize = Resize(256, antialias=True)
+            frame_aug[:, :, :256] = resize(past_obs['agentview_image'][::-1,::-1]).permute(2, 0, 1)
+            closest_obs = 0
+            if isinstance(closest_obs, int):
+                closest_obs = torch.zeros((3, 256, 256))
+            frame_aug[:, :, 256:] = closest_obs.squeeze()
+            rollout_video.update(frame_aug.unsqueeze(0).unsqueeze(0), step=step)
+
+        # check if current step solves a task
+        if cfg.eval_type not in ['libero_single_low_random_easy_eval', 'libero_single_high_random_easy_eval', 'libero_single_conj_random_easy_eval'] and not info["hard_eval_passed"]:
+            wrong_tasks = info["inadmissible_task"]
+            log_run_result(counters, task, lang_annotation, wrong_tasks, record, rollout_video)
+            return False, (obs, past_obs)
+
+        if done:
+            log_run_result(counters, task, lang_annotation, "success", record, rollout_video)
+            return True, (obs, past_obs)
+            
+    log_run_result(counters, task, lang_annotation, "timeout", record, rollout_video)
+
+    return False, (obs, past_obs)
+
+def get_action(cfg, model, processors, obs, past_obs, lang_annotation, goal, act_step, action_buffer, window_size, step):
+
+    if act_step > 0 and act_step % window_size == 0:
+        primary_img = obs['agentview_image'][::-1, ::-1]
+        state = np.concatenate((obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"]))
+        act_step = 0
+
+        if cfg.model == 'octo':
+                static_2 = resize_image(primary_img, (256, 256), primary=True)
+                if past_obs:
+                    static_1 = resize_image(past_obs['agentview_image'][::-1,::-1], (256, 256), primary=True)
+                    primary_img_stacked = np.stack([static_1, static_2])
+                    timestep_pad_mask = np.array([[True, True]])
+                else:
+                    primary_img_stacked = np.stack([np.zeros((256, 256, 3)), static_2])
+                    timestep_pad_mask = np.array([[False, True]])
+
+                pad_mask_dict = {
+                    "image_primary": np.array([[True, True]]),
+                    "timestep": np.array([[False, False]]),
+                }
+                
+                observation = {
+                        "image_primary": np.expand_dims(primary_img_stacked, 0),  # uint8
+                        "timestep_pad_mask": timestep_pad_mask,
+                        "pad_mask_dict": pad_mask_dict,
+                        "timestep": np.array([[step-1, step]]),
+                }
+                #if 'wrist' in cfg.image_obs_keys:
+                #    observation['image_wrist'] = np.expand_dims(image_wrist, 0)
+                #    pad_mask_dict["image_wrist"] = np.array([[True, True]])
+                action_buffer = model(observation, goal)
+                action_buffer = np.array(action_buffer[0])
+
+        elif cfg.model == 'cogact':
+            action_buffer = model.step(image=primary_img, task_description=lang_annotation)
+            action_buffer = np.array(action_buffer)
+        elif cfg.model == 'pi0_fast':
+            inputs = {"observation/image": primary_img, "observation/state": state, "prompt": lang_annotation}
+            action_buffer = model.infer(inputs)["actions"]
+            action_buffer = np.array(action_buffer)
+        elif cfg.model in ['smolvla', 'groot', 'pi05']:
+            preprocessor, postprocessor = processors
+            main_img = torch.permute(torch.tensor(primary_img, device="cuda:0", dtype=torch.float32), (2, 0, 1)).unsqueeze(0)
+            observation = {
+                "observation.images.camera1": main_img.div(255),
+                "observation.images.camera2": torch.zeros(((1, 3, 256, 256)), device="cuda:0"),
+                #'observation.images.camera2_is_pad': torch.tensor([True], device="cuda:0"),
+                "observation.state": torch.tensor(state, dtype=torch.float32, device="cuda:0"),
+                "task": lang_annotation
+            }
+
+            proc_observation = preprocessor(observation)
+            action_buffer = model.select_action(proc_observation)
+            # LeRobot handles action chunks on its own
+            action_buffer = np.array(postprocessor(action_buffer))
+            action = action_buffer[0]
+            return action, action_buffer, act_step
+        else:
+            raise Exception("Unknown model!")
+
+    action = action_buffer[act_step]
+    action = normalize_gripper_action(action)
+    return action, action_buffer, act_step
+
+
+def log_run_result(counters, task, lang_annotation, result, record, rollout_video):
+    if record:
+        rollout_video.add_language_instruction(lang_annotation)
+
+    if counters != None:
+        counters["errors"][-1].append((task, lang_annotation, result))
 
 
 @draccus.wrap()
@@ -297,29 +392,45 @@ def eval_libero(cfg: GenerateConfig) -> None:
     elif cfg.model == 'pi0_fast':
         model, _ = load_pi0_fast_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 10
+    elif cfg.model in ['pi05', 'smolvla', 'groot']:
+        model, processor = load_smolvla_groot_checkpoint(checkpoint_path)
+        cfg.action_horizon = 1
 
+    with open('utils/libero_low_sequences_init_states', 'rb') as f:
+        eval_sequences = pickle.load(f)
+        
+    high_level_started = Counter()
+    high_level_completed = Counter()
+    low_level_started = Counter()
+    low_level_completed = Counter()
 
-    average_rate, per_task_rate, failure_dict = evaluate_libero_policy(
-        task_suite_name=cfg.task_suite_name,
-        num_trials_per_task=cfg.num_trials_per_task,
-        model_name=cfg.model,
-        action_horizon=cfg.action_horizon,
-        policy=model, 
-        timestep=-1,
-        num_steps_wait=10,
-        video_save_dir=cfg.video_save_dir
+    counters = {
+        'high_level_started': high_level_started,
+        'high_level_completed': high_level_completed,
+        'low_level_started': low_level_started,
+        'low_level_completed': low_level_completed,
+    }
+    
+
+    
+    results, average_rate, success_rates, counters = evaluate_libero_policy_seq(
+        cfg=cfg,
+        model=model, 
+        processors=processor,
+        eval_sequences=eval_sequences,
+        counters=counters,
     )
 
     results_dict = {}
-    results_dict[Path(cfg.pretrained_checkpoint).name] = (average_rate, per_task_rate, failure_dict)
+    results_dict[Path(cfg.pretrained_checkpoint).name] = (average_rate, success_rates, counters)
     pretr_path = Path(cfg.pretrained_checkpoint)
 
     if cfg.model == 'cogact':
-        scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
+        scores_path = Path(cfg.results_save_dir) / "libero_new" / (pretr_path.parent.parent.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
     elif cfg.model in ['pi05']:
-        scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.parent.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
+        scores_path = Path(cfg.results_save_dir) / "libero_new" / (pretr_path.parent.parent.parent.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
     else:
-        scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.name + "_" + pretr_path.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
+        scores_path = Path(cfg.results_save_dir) / "libero_new" / (pretr_path.parent.name + "_" + pretr_path.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
 
     with open(scores_path, 'wb') as myfile:
         pickle.dump(results_dict, myfile)
