@@ -18,6 +18,7 @@ GRASP_BOWL = "grasp_bowl"
 
 LIFT_BOWL = "lift_bowl"
 LIFT_KETCHUP = "lift_ketchup"
+LIFT_CREAM_CHEESE = "lift_cream_cheese"
 
 CLOSE_LOW_TOP_DRAWER = "close_low_top_drawer"
 OPEN_LOW_TOP_DRAWER = "open_low_top_drawer"
@@ -311,11 +312,11 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                 raise Exception(f"Ungrasping unknown object: {predicate[1]}")
         elif predicate[0] == "lifted":
             if predicate[1] == "akita_black_bowl_1":
-                return GRASP_CREAM_CHEESE
+                return LIFT_BOWL
             elif predicate[1] == "ketchup_1":
                 return LIFT_KETCHUP
             elif predicate[1] == "cream_cheese_1":
-                return GRASP_CREAM_CHEESE
+                return LIFT_CREAM_CHEESE
             else:
                 raise Exception(f"Lifting unknown object: {predicate[1]}")
         elif predicate[0] == "open":

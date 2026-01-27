@@ -272,7 +272,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num-demonstration",
         type=int,
-        default=50,
+        default=100,
         help="How much to scale rotation user inputs",
     )
     parser.add_argument("--bddl-file", type=str)
