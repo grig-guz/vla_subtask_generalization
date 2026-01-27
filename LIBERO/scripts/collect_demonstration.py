@@ -17,6 +17,14 @@ from robosuite.utils.input_utils import input2action
 import libero.libero.envs.bddl_utils as BDDLUtils
 from libero.libero.envs import *
 
+def set_init_state(env, mujoco_state):
+    env.sim.set_state_from_flattened(mujoco_state)
+    env.sim.forward()
+    env._check_success()
+    env._post_process()
+    env._update_observables(force=True)
+    return env
+
 
 def collect_human_trajectory(
     env, device, arm, env_configuration, problem_info, remove_directory=[]
@@ -32,7 +40,6 @@ def collect_human_trajectory(
         arms (str): which arm to control (eg bimanual) 'right' or 'left'
         env_configuration (str): specified environment configuration
     """
-
     reset_success = False
     while not reset_success:
         try:
@@ -40,6 +47,18 @@ def collect_human_trajectory(
             reset_success = True
         except:
             continue
+    
+    #print("resetting?")
+    #set_init_state(env, [0.0, 0.014289796677440623, -0.16781543747635438, 
+    # 0.03043980506532602, -2.4548952304319527, -0.03079254308800235, 
+    # 2.218800824342145, 0.8082865470268802, 0.020833, -0.020833, 0.04019091776401943, 
+    # -0.027361542303686818, 0.97, 0.7071067811865475, 0.0, 0.0, 0.7071067811865476, 
+    # -0.058982688338852764, -0.23146447188354363, 0.97, 0.7071067811865475, 
+    # 0.0, 0.0, 0.7071067811865476, -0.11238568235395463, -0.08461695274601805, 
+    # 0.97, 0.5, 0.5, 0.5, 0.5, -0.14018795520851232, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+    # 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+    # 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    #print("yes!")
 
     # ID = 2 always corresponds to agentview
     env.render()
@@ -348,9 +367,10 @@ if __name__ == "__main__":
     os.makedirs(new_dir)
 
     # collect demonstrations
-
     remove_directory = []
     i = 0
+    #env.seed(0)
+
     while i < args.num_demonstration:
         print(i)
         saving = collect_human_trajectory(
