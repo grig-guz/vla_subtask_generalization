@@ -101,14 +101,14 @@ class PickPlaceObj(LiberoTask):
         if state[self.target_obj] == "top_drawer":
             return False
         if self.target_obj != self.target_loc and state[self.target_obj] != self.target_loc:
-            if self.target_loc in ["plate", "black_bowl"]:
-                if state[self.target_loc] in ["floor", "cabinet_top"]:
+            if self.target_loc in ["plate", "bowl"]:
+                if state[self.target_loc] in ["floor", "cabinet"]:
                     return True
             elif self.target_loc == "top_drawer":
                 if state['top_drawer'] == 'open':
                     return True
-            elif self.target_loc == 'cabinet_top':
-                if all([state[obj] != "cabinet_top" for obj in self.all_rigid_objs]):
+            elif self.target_loc == 'cabinet':
+                if all([state[obj] != "cabinet" for obj in self.all_rigid_objs]):
                     return True
             else:
                 raise Exception("Unknown placement location!")
@@ -120,7 +120,10 @@ class PickPlaceObj(LiberoTask):
             return state
 
     def __str__(self):
-        return "place_" + self.target_obj +  "_on_" + self.target_loc
+        if self.target_loc == "ketchup":
+            return "put_" + self.target_obj +  "_in_" + self.target_loc
+        else:
+            return "put_" + self.target_obj +  "_on_" + self.target_loc
 
 
 class OpenCloseDrawer(LiberoTask):
@@ -145,9 +148,9 @@ class OpenCloseDrawer(LiberoTask):
 
     def __str__(self):
         if self.direction == "open":
-            return "open_" + self.target_obj
+            return "open_high_" + self.target_obj
         else:
-            return "close_" + self.target_obj
+            return "close_high_" + self.target_obj
 
 
 def get_sequences_for_state2(args):
@@ -158,10 +161,10 @@ def get_sequences_for_state2(args):
     results = []
     
     all_tasks = [PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, OpenCloseDrawer, OpenCloseDrawer, OpenCloseDrawer]
-    all_rigid_objs = ["black_bowl", "ketchup"]
+    all_rigid_objs = ["bowl", "ketchup"]
     all_articulated_objects = ["top_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
-    all_locations = ["cabinet_top", "top_drawer", "plate", "black_bowl"]
+    all_locations = ["cabinet", "top_drawer", "plate", "bowl"]
 
     while len(results) < num_sequences:
         seq = np.random.choice(all_tasks, size=seq_len, replace=False)
@@ -175,34 +178,24 @@ def get_sequences_for_state2(args):
 
 def check_sequence(state, seq, log_res=False):
     state_copy = deepcopy(state)
-    #print(state_copy)
-    #print([str(elm) for elm in seq])
     for task in seq:
         if not task.check_preconditions(state_copy):
-            #print("Fail at: ", task)
-            #print()
-            #print()
             return False
-        #if log_res:
-        #    print(str(task), state_copy)
-        #    print(state_copy['grasped'], task.and_preconds)
         state_copy = task.update_state(state_copy)     
-        #if log_res:
-        #    print(state_copy)
     return True
 
 
 @functools.lru_cache
-def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
+def get_hl_random_sequences(num_sequences=1000, num_workers=None):
 
     # An object is never in a drawer initially.
     possible_conditions = {
         "top_drawer": ["closed", "open"],
-        "black_bowl": ["floor"],
+        "bowl": ["floor"],
         "plate": ["floor"],
         "ketchup": ["floor"],
         "grasped": [0],
-        "black_bowl_lifted": [0],
+        "bowl_lifted": [0],
         "ketchup_lifted": [0],
     }
 
@@ -238,28 +231,58 @@ def get_low_level_random_sequences(num_sequences=1000, num_workers=None):
     return results
 
 
-def generate_pyhash_seeds():
-    import pyhash
-    hasher = pyhash.fnv1_32()
-    results = get_low_level_random_sequences(1000)
-    seeds = {}
+def store_sequences_init_states(store_path, results):
+    from libero.libero.envs import OffScreenRenderEnv
+    
 
-    for initial_state, _, seq in results:
-        seed = hasher(str(initial_state.values()))
-        init_state_idx = []
-        for key, value in initial_state.items():
-            init_state_idx.append(key)
-            init_state_idx.append(value)
+    env_args = {"bddl_file_name": "/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/libero_single/KITCHEN_SCENE5_close_the_top_drawer_of_the_cabinet.bddl", 
+                    "camera_heights": 256, 
+                    "camera_widths": 256}
+    env_drawer_open = OffScreenRenderEnv(**env_args)
+    env_drawer_open.seed(0)
 
-        seeds[tuple(init_state_idx)] = seed
+    env_args = {"bddl_file_name": "/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/libero_single/KITCHEN_SCENE5_open_the_top_drawer_of_the_cabinet.bddl", 
+                    "camera_heights": 256, 
+                    "camera_widths": 256}
+    env_drawer_closed = OffScreenRenderEnv(**env_args)
+    env_drawer_closed.seed(0)
+
+    libero_high2conj = {
+        "close_high_top_drawer": ["grasp_top_drawer", "close_low_top_drawer", "ungrasp_drawer"],
+        "open_high_top_drawer": ["grasp_top_drawer", "open_low_top_drawer", "ungrasp_drawer"],
+        "put_ketchup_on_plate": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_plate", "ungrasp_ketchup"],
+        "put_ketchup_on_cabinet": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_cabinet", "ungrasp_ketchup"],
+        "put_ketchup_on_bowl": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_bowl", "ungrasp_ketchup"],
+        "put_ketchup_on_top_drawer": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_top_drawer", "ungrasp_ketchup"],
+        "put_bowl_on_cabinet": ["grasp_bowl", "lift_bowl", "place_bowl_over_cabinet", "ungrasp_bowl"],
+        "put_bowl_on_plate": ["grasp_bowl", "lift_bowl", "place_bowl_over_plate", "ungrasp_bowl"],
+        "put_bowl_on_top_drawer": ["grasp_bowl", "lift_bowl", "place_bowl_over_top_drawer", "ungrasp_bowl"]
+    }
+    
+    results_states = []    
+    for initial_state, sub, seq in results:
+
+        if initial_state["top_drawer"] == "open":
+            env = env_drawer_open
+        else:
+            env = env_drawer_closed
+        env.reset()
+        state = env.env.sim.get_state().flatten()
+        results_states.append((initial_state, sub, seq, state))
+    
     import pickle
-    with open('utils/low_sequence_seeds', 'wb') as f:
-        pickle.dump(seeds, f)
+    with open(store_path, 'wb') as f:
+        pickle.dump(results_states, f)
 
 
 if __name__ == "__main__":
+    save_sequences = False
     print("getting sequences")
-    results = get_low_level_random_sequences(1000)
+    results = get_hl_random_sequences(1000)
+    store_path = "utils/libero_high_sequences_init_states"
+
+    store_sequences_init_states(store_path, results)
+
     high_level_counter = Counter()
     low_level_counter = Counter()
     print("printing res")

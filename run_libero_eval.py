@@ -111,10 +111,10 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
         # Initialize LIBERO environment and task description
         env, lang_annotation = get_libero_env(task, resolution=256)
 
-        hard_eval = False
+        seq_evaluation = True
         if 'hard' in task.problem_folder:
-            hard_eval = True
-            env.env.set_hard_validation(hard_eval)
+            seq_evaluation = False
+            env.env.set_seq_evaluation(seq_evaluation)
 
         if model_name == 'octo':
             goal = policy.create_tasks(texts=[lang_annotation])
@@ -136,6 +136,11 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
         elif model_name in ['smolvla', 'groot', 'pi05']:
             window_size = 1
             act_step = 1
+        else:
+            raise Exception("Unknown model")
+
+        max_steps = 500
+        resize_size = 224
 
         # Start episodes
         task_episodes, task_successes = 0, 0
@@ -153,8 +158,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
             # Setup
             t = 0
             replay_images = []
-            max_steps = 500
-
+            
             print(f"Starting episode {task_episodes+1}...")
             past_obs = None
             while t < max_steps + num_steps_wait:
@@ -166,7 +170,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                     past_obs = obs
                     continue
                 
-                resize_size = 224
+                
 
                 # Save preprocessed image for replay video
                 replay_images.append(get_libero_image(obs, resize_size))
@@ -200,9 +204,11 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                         action_buffer = policy_fn(observation, goal)
                         action_buffer = np.array(action_buffer[0])
                         action = action_buffer[act_step]
+
                     elif model_name == 'cogact':
                         action_buffer = policy.step(image=primary_img, task_description=lang_annotation)
                         action = np.array(action_buffer[act_step])
+
                     elif model_name == 'pi0_fast':
                         from openpi_client import image_tools
                         img = np.ascontiguousarray(primary_img)
@@ -212,6 +218,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                         inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
                         action_buffer = policy.infer(inputs)["actions"]
                         action = action_buffer[act_step]
+
                     elif model_name in ['smolvla', 'groot', 'pi05']:
                         preprocessor, postprocessor = processors
                         primary_img = torch.permute(torch.tensor(primary_img.copy(), device="cuda:0", dtype=torch.float32), (2, 0, 1)).unsqueeze(0)
@@ -223,17 +230,17 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                             "task": lang_annotation
                         }
                         proc_observation = preprocessor(observation)
-                        action_buffer = model.select_action(proc_observation)
+                        action_buffer = policy.select_action(proc_observation)
                         # LeRobot handles action chunks on its own
                         action_buffer = np.array(postprocessor(action_buffer))
                         action = action_buffer[0]
                         action = binarize_gripper_action(action)
+
                     else:
                         raise Exception("Unknown model!")
                 else:
                     action = action_buffer[act_step]
 
-                
                 act_step += 1
                 if model_name in ['octo', 'cogact']:
                     action = normalize_gripper_action(action)
@@ -243,7 +250,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                 past_obs = obs
                 obs, reward, done, info = env.step(action.tolist())
 
-                if not info['hard_eval_passed']:
+                if 'hard_eval_passed' in info and not info['hard_eval_passed']:
                     failure_dict[lang_annotation].append(info["inadmissible_task"])
                     break
 
@@ -261,9 +268,9 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
             total_episodes += 1
 
             # Save a replay video of the episode
-            save_rollout_video(
-                video_save_dir, replay_images, total_episodes, success=done, task_description=lang_annotation, timestep=timestep
-            )
+            #save_rollout_video(
+            #    video_save_dir, replay_images, total_episodes, success=done, task_description=lang_annotation, timestep=timestep
+            #)
 
             # Log current results
             print(f"Success: {done}")
@@ -297,6 +304,9 @@ def eval_libero(cfg: GenerateConfig) -> None:
     elif cfg.model == 'pi0_fast':
         model, _ = load_pi0_fast_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 10
+    elif cfg.model in ['pi05', 'smolvla', 'groot']:
+        model, processor = load_smolvla_groot_checkpoint(checkpoint_path)
+        cfg.action_horizon = 1
 
 
     average_rate, per_task_rate, failure_dict = evaluate_libero_policy(
@@ -305,6 +315,7 @@ def eval_libero(cfg: GenerateConfig) -> None:
         model_name=cfg.model,
         action_horizon=cfg.action_horizon,
         policy=model, 
+        processors=processor,
         timestep=-1,
         num_steps_wait=10,
         video_save_dir=cfg.video_save_dir
@@ -317,7 +328,7 @@ def eval_libero(cfg: GenerateConfig) -> None:
     if cfg.model == 'cogact':
         scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
     elif cfg.model in ['pi05']:
-        scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.parent.name + f"_{cfg.model}_results_{cfg.eval_type}.pkl")
+        scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.parent.parent.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
     else:
         scores_path = Path(cfg.results_save_dir) / "libero" / (pretr_path.parent.name + "_" + pretr_path.name + f"_{cfg.model}_results_{cfg.task_suite_name}.pkl")
 

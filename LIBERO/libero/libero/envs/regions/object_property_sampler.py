@@ -93,6 +93,7 @@ class OpenCloseSampler(ObjectPropertySampler):
         self.state_type = state_type
         self.joint_ranges = joint_ranges
         assert self.joint_ranges[0] <= self.joint_ranges[1]
+        self.name = name
         super().__init__(name, mujoco_objects)
         self.name = name
 
