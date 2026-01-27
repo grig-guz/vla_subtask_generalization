@@ -215,6 +215,16 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
     "libero_low_level": [
         ("libero_low_level", 1.0),
     ],
+    "libero_high_level_single": [
+        ("libero_high_level_single", 1.0),
+    ],
+    "libero_conj_single": [
+        ("libero_conj_single", 1.0),
+    ],
+    "libero_low_level_single": [
+        ("libero_low_level_single", 1.0),
+    ],
+
 }
 
 # fmt: on

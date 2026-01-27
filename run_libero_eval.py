@@ -207,8 +207,8 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
 
                     elif model_name == 'cogact':
                         action_buffer = policy.step(image=primary_img, task_description=lang_annotation)
-                        action = np.array(action_buffer[act_step])
-
+                        action_buffer = np.array(action_buffer)
+                        action = action_buffer[act_step]
                     elif model_name == 'pi0_fast':
                         from openpi_client import image_tools
                         img = np.ascontiguousarray(primary_img)
@@ -217,7 +217,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                         )
                         inputs = {"observation/image": img, "observation/state": state, "prompt": lang_annotation}
                         action_buffer = policy.infer(inputs)["actions"]
-                        action = action_buffer[act_step]
+                        action = np.array(action_buffer[act_step])
 
                     elif model_name in ['smolvla', 'groot', 'pi05']:
                         preprocessor, postprocessor = processors

@@ -260,7 +260,6 @@ class SiteObjectState(BaseObjectState):
         geom_ids = np.where(self.env.sim.model.geom_bodyid == body_id)[0]
         geom_names = np.array([self.env.sim.model.geom_id2name(g_id) for g_id in geom_ids])
         
-        #return self.env._check_grasp(gripper, geom_names)
         return self.env.check_contact(gripper, geom_names)
 
     def check_ungrasped(self):

@@ -195,7 +195,16 @@ def load_pi0_fast_checkpoint(pretrained_path):
 
 def load_cogact_checkpoint(pretrained_checkpoint, model_state_dict=None):
     from models.CogACT.scripts.deploy import CogACTService
-    if 'libero' in pretrained_checkpoint:
+    if 'single' in pretrained_checkpoint:
+        if 'conj' in pretrained_checkpoint:
+            unnorm_key = "libero_conj_single"
+        elif 'low_level' in pretrained_checkpoint:
+            unnorm_key = "libero_low_level_single"
+        elif 'high_level' in pretrained_checkpoint:
+            unnorm_key = "libero_high_level_single"
+        else:
+            raise Exception("unknown unnorm_key")
+    elif 'libero' in pretrained_checkpoint:
         if 'conj' in pretrained_checkpoint:
             unnorm_key = "libero_conj"
         elif 'low_level' in pretrained_checkpoint:

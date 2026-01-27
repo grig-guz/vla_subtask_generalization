@@ -691,6 +691,28 @@ OXE_DATASET_CONFIGS = {
         "state_obs_keys": ["state", "scene_state"],
         "state_encoding": StateEncoding.NONE,
         "action_encoding": ActionEncoding.EEF_POS,
+    },
+    "libero_high_level_single": {
+        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "state_obs_keys": ["state", "scene_state"],
+        "state_encoding": StateEncoding.NONE,
+        "action_encoding": ActionEncoding.EEF_POS,
+    },
+    "libero_conj_single": {
+        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "state_obs_keys": ["state", "scene_state"],
+        "state_encoding": StateEncoding.NONE,
+        "action_encoding": ActionEncoding.EEF_POS,
+    },
+    "libero_low_level_single": {
+        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": "wrist_image"},
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "state_obs_keys": ["state", "scene_state"],
+        "state_encoding": StateEncoding.NONE,
+        "action_encoding": ActionEncoding.EEF_POS,
     }
+
 
 }

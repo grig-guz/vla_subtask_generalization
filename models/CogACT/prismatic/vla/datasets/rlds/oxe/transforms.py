@@ -940,4 +940,8 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "libero_high_level":libero_dataset_transform,
     "libero_conj":libero_dataset_transform,
     "libero_low_level":libero_dataset_transform,
+    "libero_high_level_single":libero_dataset_transform,
+    "libero_conj_single":libero_dataset_transform,
+    "libero_low_level_single":libero_dataset_transform,
+
 }

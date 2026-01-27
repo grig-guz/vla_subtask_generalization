@@ -8,6 +8,7 @@ from pathlib import Path
 from omegaconf import OmegaConf
 import math
 import contextlib
+import pickle
 
 
 @contextlib.contextmanager
@@ -49,8 +50,7 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
             model=policy, 
             processors=processors, 
             eval_sequences=eval_sequences, 
-            counters=None, 
-            num_sequences=num_sequences
+            counters=None
         )
 
     elif 'libero' in eval_type:

@@ -193,8 +193,9 @@ def evaluate_sequence(
     for subtask in eval_sequence:
         env.env.parsed_problem["goal_state"] = [env.env.task_to_predicate[subtask]]
         
-        if cfg.eval_type in ['train_libero_single_conj']:
+        if cfg.eval_type in ['libero_conj_single']:
             lang_annotation = ", then ".join([env.env.task_to_lang[low_subtask] for low_subtask in env.env.task_to_subtasks[subtask]])
+            print(lang_annotation)
         else:
             lang_annotation = env.env.task_to_lang[subtask]
 
@@ -290,7 +291,7 @@ def rollout(observations, task, lang_annotation, cfg, model, processors, env, re
             rollout_video.update(frame_aug.unsqueeze(0).unsqueeze(0), step=step)
 
         # check if current step solves a task
-        if cfg.eval_type not in ['libero_single_low_random_easy_eval', 'libero_single_high_random_easy_eval', 'libero_single_conj_random_easy_eval'] and not info["hard_eval_passed"]:
+        if cfg.eval_type not in ['libero_low_level_single_easy'] and not info["hard_eval_passed"]:
             wrong_tasks = info["inadmissible_task"]
             log_run_result(counters, task, lang_annotation, wrong_tasks, record, rollout_video)
             return False, (obs, past_obs)
@@ -302,6 +303,7 @@ def rollout(observations, task, lang_annotation, cfg, model, processors, env, re
     log_run_result(counters, task, lang_annotation, "timeout", record, rollout_video)
 
     return False, (obs, past_obs)
+
 
 def get_action(cfg, model, processors, obs, past_obs, lang_annotation, goal, act_step, action_buffer, window_size, step):
 

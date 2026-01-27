@@ -91,6 +91,17 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         self.do_sequential_evaluation = True
         self.t_step = 0
 
+        self.task_to_subtasks = {
+            CLOSE_HIGH_TOP_DRAWER: [GRASP_TOP_DRAWER, CLOSE_LOW_TOP_DRAWER, UNGRASP_TOP_DRAWER],
+            OPEN_HIGH_TOP_DRAWER: [GRASP_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, UNGRASP_TOP_DRAWER],
+            PUT_KETCHUP_ON_PLATE: ["grasp_ketchup", LIFT_KETCHUP, "place_ketchup_over_plate", UNGRASP_KETCHUP],
+            PUT_KETCHUP_ON_CABINET: ["grasp_ketchup", LIFT_KETCHUP, "place_ketchup_over_cabinet", UNGRASP_KETCHUP],
+            PUT_KETCHUP_ON_BOWL: ["grasp_ketchup", LIFT_KETCHUP, "place_ketchup_over_bowl", UNGRASP_KETCHUP],
+            PUT_KETCHUP_IN_TOP_DRAWER: ["grasp_ketchup", LIFT_KETCHUP, "place_ketchup_over_top_drawer", UNGRASP_KETCHUP],
+            PUT_BOWL_ON_CABINET: ["grasp_bowl", "lift_bowl", "place_bowl_over_cabinet", "ungrasp_bowl"],
+            PUT_BOWL_ON_PLATE: ["grasp_bowl", "lift_bowl", "place_bowl_over_plate", "ungrasp_bowl"],
+            PUT_BOWL_IN_TOP_DRAWER: ["grasp_bowl", "lift_bowl", "place_bowl_over_top_drawer", "ungrasp_bowl"]
+        }
 
         self.task_to_lang = {
             GRASP_TOP_DRAWER: "grasp the handle of the top drawer",
@@ -115,6 +126,23 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             PLACE_BOWL_OVER_PLATE: "place the object over the plate",
             PLACE_BOWL_OVER_CABINET: "place the object over the top of the cabinet",
             PLACE_BOWL_OVER_TOP_DRAWER: "place the object over the top drawer of the cabinet",
+            
+
+            PUT_BOWL_IN_TOP_DRAWER: "put the black bowl in the top drawer of the cabinet", 
+            "put_bowl_on_top_drawer": "put the black bowl in the top drawer of the cabinet", 
+
+            PUT_BOWL_ON_PLATE: "put the black bowl on the plate", 
+            PUT_BOWL_ON_CABINET: "put the black bowl on top of the cabinet", 
+
+
+            PUT_KETCHUP_IN_TOP_DRAWER: "put the ketchup in the top drawer of the cabinet", 
+            "put_ketchup_on_top_drawer": "put the ketchup in the top drawer of the cabinet", 
+            PUT_KETCHUP_ON_PLATE: "put the ketchup on the plate",
+            PUT_KETCHUP_ON_BOWL: "put the ketchup on the bowl", 
+            PUT_KETCHUP_ON_CABINET: "put the ketchup on top of the cabinet",
+
+            CLOSE_HIGH_TOP_DRAWER: "close the top drawer of the cabinet",
+            OPEN_HIGH_TOP_DRAWER: "close the top drawer of the cabinet",
 
         }
 
@@ -157,13 +185,18 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
             # HL task mappings
             PUT_BOWL_IN_TOP_DRAWER: [GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
+            "put_bowl_on_top_drawer": [GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
+
             PUT_BOWL_ON_PLATE: [GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
             PUT_BOWL_ON_CABINET: [GRASP_CREAM_CHEESE, GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
 
-            PUT_KETCHUP_IN_TOP_DRAWER: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
-            PUT_KETCHUP_ON_PLATE: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
-            PUT_KETCHUP_ON_BOWL: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
 
+            PUT_KETCHUP_IN_TOP_DRAWER: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, GRASP_BOWL], 
+            "put_ketchup_on_top_drawer": [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, GRASP_BOWL], 
+            PUT_KETCHUP_ON_PLATE: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, GRASP_BOWL], 
+            PUT_KETCHUP_ON_BOWL: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, GRASP_BOWL], 
+            PUT_KETCHUP_ON_CABINET: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, GRASP_BOWL],
+            
             # Old experiment
             TURN_ON_STOVE: [GRASP_PAN, GRASP_MOKA_POT],
             "put_pan_on_stove_3": [GRASP_MOKA_POT, TURN_ON_STOVE],
@@ -239,10 +272,13 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
 
             PUT_BOWL_IN_TOP_DRAWER: ["on", "akita_black_bowl_1", "white_cabinet_1_top_region"], 
+            "put_bowl_on_top_drawer": ["on", "akita_black_bowl_1", "white_cabinet_1_top_region"], 
+
             PUT_BOWL_ON_PLATE: ["on", "akita_black_bowl_1", "plate_1"], 
             PUT_BOWL_ON_CABINET: ["on", "akita_black_bowl_1", "white_cabinet_1_top_side"], 
 
             PUT_KETCHUP_IN_TOP_DRAWER: ["on", "ketchup_1", "white_cabinet_1_top_region"], 
+            "put_ketchup_on_top_drawer": ["on", "ketchup_1", "white_cabinet_1_top_region"], 
             PUT_KETCHUP_ON_PLATE: ["on", "ketchup_1",  "plate_1"], 
             PUT_KETCHUP_ON_BOWL: ["on", "ketchup_1",  "akita_black_bowl_1"], 
             PUT_KETCHUP_ON_CABINET: ["on", "ketchup_1", "white_cabinet_1_top_side"], 

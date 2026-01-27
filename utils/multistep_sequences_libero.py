@@ -100,9 +100,9 @@ class PickPlaceObj(LiberoTask):
     def check_preconditions(self, state):
         if state[self.target_obj] == "top_drawer":
             return False
-        if self.target_obj != self.target_loc and state[self.target_obj] != self.target_loc:
+        if self.target_obj != self.target_loc and state[self.target_obj] != self.target_loc and all([state[obj] != self.target_obj for obj in self.all_rigid_objs]):
             if self.target_loc in ["plate", "bowl"]:
-                if state[self.target_loc] in ["floor", "cabinet"]:
+                if state[self.target_loc] in ["floor", "cabinet"] and all([state[obj] != self.target_loc for obj in self.all_rigid_objs]):
                     return True
             elif self.target_loc == "top_drawer":
                 if state['top_drawer'] == 'open':
@@ -115,12 +115,11 @@ class PickPlaceObj(LiberoTask):
         return False
 
     def update_state(self, state):
-        for obj in self.all_rigid_objs:
-            state[obj] = self.target_loc
-            return state
+        state[self.target_obj] = self.target_loc
+        return state
 
     def __str__(self):
-        if self.target_loc == "ketchup":
+        if self.target_loc == "top_drawer":
             return "put_" + self.target_obj +  "_in_" + self.target_loc
         else:
             return "put_" + self.target_obj +  "_on_" + self.target_loc
@@ -160,7 +159,7 @@ def get_sequences_for_state2(args):
     seq_len = 5
     results = []
     
-    all_tasks = [PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, OpenCloseDrawer, OpenCloseDrawer, OpenCloseDrawer]
+    all_tasks = [PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, OpenCloseDrawer, OpenCloseDrawer]
     all_rigid_objs = ["bowl", "ketchup"]
     all_articulated_objects = ["top_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
@@ -247,17 +246,6 @@ def store_sequences_init_states(store_path, results):
     env_drawer_closed = OffScreenRenderEnv(**env_args)
     env_drawer_closed.seed(0)
 
-    libero_high2conj = {
-        "close_high_top_drawer": ["grasp_top_drawer", "close_low_top_drawer", "ungrasp_drawer"],
-        "open_high_top_drawer": ["grasp_top_drawer", "open_low_top_drawer", "ungrasp_drawer"],
-        "put_ketchup_on_plate": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_plate", "ungrasp_ketchup"],
-        "put_ketchup_on_cabinet": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_cabinet", "ungrasp_ketchup"],
-        "put_ketchup_on_bowl": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_bowl", "ungrasp_ketchup"],
-        "put_ketchup_on_top_drawer": ["grasp_ketchup", "lift_ketchup", "place_ketchup_over_top_drawer", "ungrasp_ketchup"],
-        "put_bowl_on_cabinet": ["grasp_bowl", "lift_bowl", "place_bowl_over_cabinet", "ungrasp_bowl"],
-        "put_bowl_on_plate": ["grasp_bowl", "lift_bowl", "place_bowl_over_plate", "ungrasp_bowl"],
-        "put_bowl_on_top_drawer": ["grasp_bowl", "lift_bowl", "place_bowl_over_top_drawer", "ungrasp_bowl"]
-    }
     
     results_states = []    
     for initial_state, sub, seq in results:
