@@ -413,23 +413,6 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
         return True, None
 
-    def _pass_hard_eval(self):
-        #print("Cur subtask: ", self.parsed_problem["subgoal_states"][self.current_subgoal_idx])
-        task = self.predicate_to_task(self.parsed_problem["subgoal_states"][self.current_subgoal_idx][0])
-        
-        inadm_tasks = self.task_to_inadm[task]
-        #print("Checking inadm tasks ", inadm_tasks, " for task ", task)
-        for inadm in inadm_tasks:
-            pred = self.task_to_predicate[inadm]
-            if pred[1] not in self.object_states_dict:
-                continue
-            this_result = self._eval_predicate(pred)
-            #print(pred, this_result)
-            if this_result:
-                return False, inadm
-
-        return True, None
-
     def _pass_hard_eval_validation(self):
 
         if "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it" in self.bddl_file_name:
@@ -497,6 +480,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             self.update_init_obj_poses()
 
         done = self._check_success()
+        
         if self.do_hard_validation:
             all_subgoals_done = True
             info["hard_eval_passed"], info["inadmissible_task"] = self._pass_hard_eval_validation()
@@ -520,7 +504,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
                 if done_subgoal:
                     info['subgoal_completed'] = True
-                    print("Completed subgoal! ", self.parsed_problem["subgoal_states"][self.current_subgoal_idx], " done? ", done)
+                    #print("Completed subgoal! ", self.parsed_problem["subgoal_states"][self.current_subgoal_idx], " done? ", done)
 
                     self.current_subgoal_idx += 1
                     self.update_init_obj_poses()

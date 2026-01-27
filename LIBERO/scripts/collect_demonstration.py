@@ -256,6 +256,7 @@ if __name__ == "__main__":
         default=50,
         help="How much to scale rotation user inputs",
     )
+    
     parser.add_argument("--bddl-file", type=str)
 
     parser.add_argument("--vendor-id", type=int, default=0x256f)
@@ -274,7 +275,6 @@ if __name__ == "__main__":
 
     assert os.path.exists(args.bddl_file)
     problem_info = BDDLUtils.get_problem_info(args.bddl_file)
-    # Check if we're using a multi-armed environment and use env_configuration argument if so
 
     # Create environment
     problem_name = problem_info["problem_name"]
