@@ -69,7 +69,6 @@ prismatic/training/strategies/__init__.py
 prismatic/training/strategies/base_strategy.py
 prismatic/training/strategies/ddp.py
 prismatic/training/strategies/fsdp.py
-prismatic/util/__init__.py
 prismatic/util/batching_utils.py
 prismatic/util/data_utils.py
 prismatic/util/nn_utils.py

@@ -31,9 +31,9 @@ from utils.calvin_utils import get_calvin_env
 
 
 REPO_NAMES = [#"calvin_high_level_wrist", 
-              "libero_low_level",
-              "libero_high_level", 
-              "libero_conj", 
+              "libero_low_level_single",
+              "libero_high_level_single", 
+              "libero_conj_single", 
               #"calvin_conj", 
               ]
 

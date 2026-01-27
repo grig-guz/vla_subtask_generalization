@@ -1,7 +1,7 @@
 
 #!/bin/bash
 
-WDB_ENTITY="grig_guz" 
+WDB_ENTITY="grig-guz" 
 WDB_PROJ="cogact" 
 SEED=1
 TRAIN_DATASET="libero_conj" # calvin_high_level, calvin_conj, calvin_low_level, libero_high_level, libero_conj, libero_low_level
