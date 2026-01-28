@@ -27,6 +27,8 @@ import tyro
 import sys
 import numpy as np
 sys.path.append("/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/")
+sys.path.append("/home/gguz/scratch/vla_subtask_generalization")
+
 from utils.calvin_utils import get_calvin_env
 
 
@@ -39,12 +41,12 @@ REPO_NAMES = [#"calvin_high_level_wrist",
 
 
 def main(data_dir: str, *, push_to_hub: bool = False):
-    calvin_env, _ = get_calvin_env(
-            train_cfg_path=None,
-            merged_cfg_path="/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/utils/med_tasks_config.yaml",
-            model='',
-            device_id=0,
-    )
+    #calvin_env, _ = get_calvin_env(
+    #        train_cfg_path=None,
+    #        merged_cfg_path="/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/utils/med_tasks_config.yaml",
+    #        model='',
+    #        device_id=0,
+    #)
 
     for REPO_NAME in REPO_NAMES:
 
