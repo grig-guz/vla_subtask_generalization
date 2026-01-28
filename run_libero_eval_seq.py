@@ -16,8 +16,9 @@ import cv2
 import os
 import imageio
 from collections import defaultdict
+from utils.rollout_video import RolloutVideo
 
-from utils.calvin_utils import  get_libero_env, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, invert_gripper_action, resize_image
+from utils.calvin_utils import  get_libero_env, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, load_smolvla_groot_checkpoint, invert_gripper_action, resize_image
 from utils.shared_utils import  high_to_low_level_mappings, normalize_gripper_action, set_seed_everywhere, get_libero_dummy_action, quat2axisangle
 
 
@@ -66,6 +67,10 @@ def count_success(results):
     return step_success
 
 
+def get_video_tag(i):
+    return f"_long_horizon/sequence_{i}"
+
+
 def get_libero_image(obs, resize_size):
     """Extracts image from observations and preprocesses it."""
     assert isinstance(resize_size, int) or isinstance(resize_size, tuple)
@@ -93,6 +98,7 @@ def save_rollout_video(video_save_dir, rollout_images, idx, success, task_descri
         print(f"Saved rollout MP4 at path {mp4_path}")
         return mp4_path
 
+
 def evaluate_libero_policy_seq(cfg, model, processors, eval_sequences, counters):
     from libero.libero.envs import OffScreenRenderEnv
     if counters is not None:
@@ -113,7 +119,8 @@ def evaluate_libero_policy_seq(cfg, model, processors, eval_sequences, counters)
     results = []
     if cfg.num_sequences < len(eval_sequences):
         eval_sequences = eval_sequences[:cfg.num_sequences]
-    
+        #eval_sequences = eval_sequences[14:15]
+
 
     env_args = {"bddl_file_name": "/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/LIBERO/libero/libero/bddl_files/libero_single/KITCHEN_SCENE5_close_the_top_drawer_of_the_cabinet.bddl", 
                     "camera_heights": 256, 
@@ -277,24 +284,22 @@ def rollout(observations, task, lang_annotation, cfg, model, processors, env, re
             window_size=window_size,
             step=step
         )
+        
         act_step += 1
         past_obs = obs
         obs, _, done, info = env.step(action)
 
         if record:
             # update video
-            frame_aug = torch.zeros((3, 256, 512))
-            resize = Resize(256, antialias=True)
-            frame_aug[:, :, :256] = resize(past_obs['agentview_image'][::-1,::-1]).permute(2, 0, 1)
-            closest_obs = 0
-            if isinstance(closest_obs, int):
-                closest_obs = torch.zeros((3, 256, 256))
-            frame_aug[:, :, 256:] = closest_obs.squeeze()
+            frame_aug = torch.zeros((3, 224, 448))
+            resize = Resize(224, antialias=True)
+            frame_aug[:, :, :224] = resize(torch.tensor(past_obs['agentview_image'][::-1,::-1].copy()).permute(2, 0, 1))
             rollout_video.update(frame_aug.unsqueeze(0).unsqueeze(0), step=step)
 
         # check if current step solves a task
         if cfg.eval_type not in ['libero_low_level_single_easy'] and not info["hard_eval_passed"]:
             wrong_tasks = info["inadmissible_task"]
+            print("HARD EVAL FAILURE!", info["hard_eval_passed"], info["inadmissible_task"])
             log_run_result(counters, task, lang_annotation, wrong_tasks, record, rollout_video)
             return False, (obs, past_obs)
 
@@ -397,12 +402,17 @@ def eval_libero(cfg: GenerateConfig) -> None:
         model, _ = load_pi0_fast_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 10
     elif cfg.model in ['pi05', 'smolvla', 'groot']:
-        model, processor = load_smolvla_groot_checkpoint(checkpoint_path)
+        model, processor = load_smolvla_groot_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 1
 
-    with open('utils/libero_low_sequences_init_states', 'rb') as f:
-        eval_sequences = pickle.load(f)
-        
+    if "low" in cfg.eval_type:
+        with open('utils/libero_low_sequences_init_states', 'rb') as f:
+            eval_sequences = pickle.load(f)
+    else:
+        with open('utils/libero_high_sequences_init_states', 'rb') as f:
+            eval_sequences = pickle.load(f)
+
+
     high_level_started = Counter()
     high_level_completed = Counter()
     low_level_started = Counter()

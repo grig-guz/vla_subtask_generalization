@@ -142,7 +142,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             PUT_KETCHUP_ON_CABINET: "put the ketchup on top of the cabinet",
 
             CLOSE_HIGH_TOP_DRAWER: "close the top drawer of the cabinet",
-            OPEN_HIGH_TOP_DRAWER: "close the top drawer of the cabinet",
+            OPEN_HIGH_TOP_DRAWER: "open the top drawer of the cabinet",
 
         }
 
@@ -544,7 +544,6 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             This should be redefined w.r.t. a task and a scene, not separately as in 
             _pass_hard_eval and _pass_hard_eval_validation
         """
-
         if "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it" in self.bddl_file_name:
             inadm_tasks = [GRASP_MOKA_POT]
         elif "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it" in self.bddl_file_name:
@@ -591,6 +590,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                 goal_state = goal_state[0]
             task = self.predicate_to_task(goal_state)
             inadm_tasks = self.task_to_inadm[task]
+            #print(f"Inadm tasks for {task} are {inadm_tasks}")
         else:
             raise Exception("Unknown bddl file")
 

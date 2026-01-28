@@ -98,12 +98,17 @@ class ObjectState(BaseObjectState):
         #print(f"Object {self.object_name}, grasped before: {self.is_grasped_init}, after: {self.check_grasped_state()}")
         return not self.is_grasped_init and self.check_grasped_state()
 
+    def check_contact_gripper(self):
+        gripper = self.env.robots[0].gripper
+        object_1 = self.env.get_object(self.object_name)
+        return self.env.check_contact(gripper, object_1)
+
     def check_grasped_state(self):
 
         gripper = self.env.robots[0].gripper
         object_1 = self.env.get_object(self.object_name)
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
-        return self.env._check_grasp(gripper, object_1) or object_pos[2] - self.subtask_init_pos[2] > 0.025
+        return self.env._check_grasp(gripper, object_1) or (self.check_contact_gripper() and object_pos[2] - self.subtask_init_pos[2] > 0.025)
 
     def check_contain(self, other):
         object_1 = self.env.get_object(self.object_name)
