@@ -28,6 +28,7 @@ import sys
 import numpy as np
 sys.path.append("/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/")
 sys.path.append("/home/gguz/links/scratch/vla_subtask_generalization")
+sys.path.append("/home/gguz/scratch/vla_subtask_generalization")
 
 from utils.calvin_utils import get_calvin_env
 
