@@ -61,7 +61,7 @@ class ObjectState(BaseObjectState):
         
 
     def lifted(self):
-        if self.subtask_init_pos == None:
+        if not (isinstance(self.is_grasped_init, bool) or isinstance(self.is_grasped_init, np.bool)):
             return False
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
         return object_pos[2] - self.subtask_init_pos[2] > 0.05 and \
@@ -81,7 +81,7 @@ class ObjectState(BaseObjectState):
         return self.env.check_contact(object_1, object_2)
 
     def check_ungrasped(self):
-        if self.is_grasped_init == None:
+        if not (isinstance(self.is_grasped_init, bool) or isinstance(self.is_grasped_init, np.bool)):
             return False
 
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
@@ -92,7 +92,7 @@ class ObjectState(BaseObjectState):
 
     def check_grasped(self):
         #print(f"Checking grasped for object {self.object_name}, grasped before: {self.is_grasped_init}, type?: {type(self.is_grasped_init)}")
-        if self.is_grasped_init == None:
+        if not (isinstance(self.is_grasped_init, bool) or isinstance(self.is_grasped_init, np.bool)):
             return False
 
         #print(f"Object {self.object_name}, grasped before: {self.is_grasped_init}, after: {self.check_grasped_state()}")
