@@ -139,7 +139,7 @@ class ControlEnv:
     def regenerate_obs_from_state(self, mujoco_state):
         self.set_state(mujoco_state)
         self.env.sim.forward()
-        self.check_success()
+        #self.check_success()
         self._post_process()
         self._update_observables(force=True)
         return self.env._get_observations()

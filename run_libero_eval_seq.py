@@ -174,6 +174,8 @@ def evaluate_sequence(
     env.reset()
     env.set_init_state(initial_state)
     env.env.set_seq_evaluation(False)
+    # Important to handle temporal predicates (some might reference object init states which are not initialized yet)
+    env.env.parsed_problem["goal_state"] = [env.env.task_to_predicate[eval_sequence[0]]]
 
     t = 0
     if t < cfg.num_steps_wait:
@@ -308,7 +310,7 @@ def rollout(observations, task, lang_annotation, cfg, model, processors, env, re
 def get_action(cfg, model, processors, obs, past_obs, lang_annotation, goal, act_step, action_buffer, window_size, step):
 
     if act_step > 0 and act_step % window_size == 0:
-        primary_img = obs['agentview_image'][::-1, ::-1]
+        primary_img = obs['agentview_image'][::-1, ::-1].copy()
         state = np.concatenate((obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]), obs["robot0_gripper_qpos"]))
         act_step = 0
 

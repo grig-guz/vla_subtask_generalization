@@ -617,8 +617,10 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         done = self._check_success()
 
         if not self.do_sequential_evaluation:
-            all_subgoals_done = True
             info["hard_eval_passed"], info["inadmissible_task"] = self._pass_hard_eval_validation()
+            if done:
+                self.update_init_obj_poses()
+            
             return obs, reward, done, info
         else:
             obs['subgoal_language'] = None

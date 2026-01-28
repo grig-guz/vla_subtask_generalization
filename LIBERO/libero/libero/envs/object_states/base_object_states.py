@@ -61,6 +61,8 @@ class ObjectState(BaseObjectState):
         
 
     def lifted(self):
+        if self.subtask_init_pos == None:
+            return False
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
         return object_pos[2] - self.subtask_init_pos[2] > 0.05 and \
                 np.linalg.norm(self.subtask_init_pos[:2] - object_pos[:2]) < 0.125

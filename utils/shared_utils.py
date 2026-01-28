@@ -36,10 +36,10 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
         cfg.action_horizon = 10
 
         if "conj" in eval_type or "high" in eval_type:
-            with open('utils/libero_high_sequences_init_states', 'rb') as f:
+            with open('/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/utils/libero_high_sequences_init_states', 'rb') as f:
                 eval_sequences = pickle.load(f)
         elif "low" in eval_type:
-            with open('utils/libero_low_sequences_init_states', 'rb') as f:
+            with open('/home/gguz/projects/aip-vshwartz/gguz/vla_subtask_generalization/utils/libero_low_sequences_init_states', 'rb') as f:
                 eval_sequences = pickle.load(f)
         else:
             raise Exception(f"Unknown eval type for single libero env: {eval_type}")
