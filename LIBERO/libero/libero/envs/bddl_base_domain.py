@@ -143,7 +143,7 @@ class BDDLBaseDomain(SingleArmEnv):
             render_gpu_device_id=render_gpu_device_id,
             control_freq=control_freq,
             horizon=horizon,
-            ignore_done=ignore_done,
+            ignore_done=True,
             hard_reset=hard_reset,
             camera_names=camera_names,
             camera_heights=camera_heights,
