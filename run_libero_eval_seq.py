@@ -185,10 +185,11 @@ def evaluate_sequence(
     env.env.parsed_problem["goal_state"] = [env.env.task_to_predicate[eval_sequence[0]]]
 
     t = 0
-    if t < cfg.num_steps_wait:
+    past_obs, obs = None, None
+    while t < cfg.num_steps_wait:
+        past_obs = obs
         obs, reward, done, info = env.step(get_libero_dummy_action())
         t += 1
-        past_obs = obs
 
     if record:
         caption = " | ".join(eval_sequence)

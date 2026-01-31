@@ -18,7 +18,7 @@ import imageio
 from collections import defaultdict
 
 from utils.calvin_utils import  get_libero_env, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, invert_gripper_action, resize_image
-from utils.shared_utils import  high_to_low_level_mappings, normalize_gripper_action, set_seed_everywhere, get_libero_dummy_action, quat2axisangle
+from utils.shared_utils import  high_to_low_level_mappings, normalize_gripper_action, binarize_gripper_action, set_seed_everywhere, get_libero_dummy_action, quat2axisangle
 
 
 
