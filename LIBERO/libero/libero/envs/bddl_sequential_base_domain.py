@@ -111,8 +111,8 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
             LIFT_BOWL: "lift the grasped object",
             LIFT_KETCHUP: "lift the grasped object",
-            CLOSE_LOW_TOP_DRAWER: "pull the drawer out",
-            OPEN_LOW_TOP_DRAWER: "push the drawer in",
+            CLOSE_LOW_TOP_DRAWER: "push the drawer in",
+            OPEN_LOW_TOP_DRAWER: "pull the drawer out",
 
             UNGRASP_TOP_DRAWER: "ungrasp the object",
             UNGRASP_BOWL: "ungrasp the object",

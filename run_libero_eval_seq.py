@@ -375,7 +375,10 @@ def get_action(cfg, model, processors, obs, past_obs, lang_annotation, goal, act
             raise Exception("Unknown model!")
 
     action = action_buffer[act_step]
-    action = normalize_gripper_action(action)
+    if cfg.model in ['octo', 'cogact']:
+        action = normalize_gripper_action(action)
+        action = invert_gripper_action(action)
+    
     return action, action_buffer, act_step
 
 
@@ -399,6 +402,7 @@ def eval_libero(cfg: GenerateConfig) -> None:
     elif cfg.model == 'cogact':
         model, _ = load_cogact_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 10
+        processor = None
     elif cfg.model == 'pi0_fast':
         model, _ = load_pi0_fast_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 10
