@@ -89,6 +89,11 @@ class Ungrasped(UnaryAtomic):
         return arg1.check_ungrasped()
 
 
+class UngraspedState(UnaryAtomic):
+    def __call__(self, arg1):
+        return arg1.check_ungrasped_state()
+
+
 class Over(BinaryAtomic):
     def __call__(self, arg1, arg2):
         #print(arg1.object_name, arg2.object_name)

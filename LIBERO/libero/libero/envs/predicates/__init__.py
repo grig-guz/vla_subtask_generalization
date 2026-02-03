@@ -19,6 +19,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "turnoff": TurnOff(),
     "grasped": Grasped(),
     "ungrasped": Ungrasped(),
+    "ungraspedstate": UngraspedState(),
     "lifted": Up(),
     "over": Over()
 }
@@ -39,3 +40,4 @@ def get_predicate_fn_dict():
 
 def get_predicate_fn(predicate_fn_name):
     return VALIDATE_PREDICATE_FN_DICT[predicate_fn_name.lower()]
+

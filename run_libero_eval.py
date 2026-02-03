@@ -17,7 +17,7 @@ import os
 import imageio
 from collections import defaultdict
 
-from utils.calvin_utils import  get_libero_env, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, invert_gripper_action, resize_image
+from utils.calvin_utils import  get_libero_env, load_octo_checkpoint, load_cogact_checkpoint, load_pi0_fast_checkpoint, load_smolvla_groot_checkpoint, invert_gripper_action, resize_image
 from utils.shared_utils import  high_to_low_level_mappings, normalize_gripper_action, binarize_gripper_action, set_seed_everywhere, get_libero_dummy_action, quat2axisangle
 
 
@@ -111,10 +111,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
         # Initialize LIBERO environment and task description
         env, lang_annotation = get_libero_env(task, resolution=256)
 
-        seq_evaluation = True
-        if 'hard' in task.problem_folder:
-            seq_evaluation = False
-            env.env.set_seq_evaluation(seq_evaluation)
+        env.env.set_seq_evaluation(False)
 
         if model_name == 'octo':
             goal = policy.create_tasks(texts=[lang_annotation])
@@ -170,8 +167,6 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                     past_obs = obs
                     continue
                 
-                
-
                 # Save preprocessed image for replay video
                 replay_images.append(get_libero_image(obs, resize_size))
 
@@ -250,7 +245,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                 past_obs = obs
                 obs, reward, done, info = env.step(action.tolist())
 
-                if 'hard_eval_passed' in info and not info['hard_eval_passed']:
+                if 'hard' in task_suite_name and 'hard_eval_passed' in info and not info['hard_eval_passed']:
                     failure_dict[lang_annotation].append(info["inadmissible_task"])
                     break
 
@@ -261,6 +256,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                     break
                 t += 1
                 
+
             if t == max_steps + num_steps_wait:
                 failure_dict[lang_annotation].append("timeout")
 
@@ -305,7 +301,7 @@ def eval_libero(cfg: GenerateConfig) -> None:
         model, _ = load_pi0_fast_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 10
     elif cfg.model in ['pi05', 'smolvla', 'groot']:
-        model, processor = load_smolvla_groot_checkpoint(checkpoint_path)
+        model, processor = load_smolvla_groot_checkpoint(cfg.pretrained_checkpoint)
         cfg.action_horizon = 1
 
 

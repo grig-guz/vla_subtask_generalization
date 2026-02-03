@@ -32,6 +32,9 @@ UNGRASP_BOWL = "ungrasp_bowl"
 UNGRASP_TOP_DRAWER = "ungrasp_top_drawer"
 UNGRASP_KETCHUP = "ungrasp_ketchup"
 UNGRASP_CREAM_CHEESE = "ungrasp_cream_cheese"
+UNGRASP_STATE_BOWL = "ungrasp_state_bowl"
+UNGRASP_STATE_KETCHUP = "ungrasp_state_ketchup"
+
 
 PLACE_KETCHUP_OVER_PLATE = "place_ketchup_over_plate"
 PLACE_KETCHUP_OVER_BOWL = "place_ketchup_over_bowl"
@@ -160,8 +163,8 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             
             CLOSE_STATE_TOP_DRAWER: [],
             OPEN_STATE_TOP_DRAWER: [],
-            CLOSE_LOW_TOP_DRAWER: [OPEN_LOW_TOP_DRAWER],
-            OPEN_LOW_TOP_DRAWER: [CLOSE_LOW_TOP_DRAWER],
+            CLOSE_LOW_TOP_DRAWER: [OPEN_LOW_TOP_DRAWER, GRASP_KETCHUP, GRASP_BOWL],
+            OPEN_LOW_TOP_DRAWER: [CLOSE_LOW_TOP_DRAWER, GRASP_KETCHUP, GRASP_BOWL],
 
             CLOSE_HIGH_TOP_DRAWER: [GRASP_CREAM_CHEESE, GRASP_KETCHUP, GRASP_BOWL],
             OPEN_HIGH_TOP_DRAWER: [GRASP_CREAM_CHEESE, GRASP_KETCHUP, GRASP_BOWL],
@@ -169,19 +172,19 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             LIFT_BOWL: [UNGRASP_BOWL],
             LIFT_KETCHUP: [UNGRASP_KETCHUP],
 
-            PLACE_KETCHUP_OVER_PLATE: [UNGRASP_KETCHUP],
-            PLACE_KETCHUP_OVER_BOWL: [UNGRASP_KETCHUP],
-            PLACE_KETCHUP_OVER_TOP_DRAWER: [UNGRASP_KETCHUP],
-            PLACE_KETCHUP_OVER_CABINET: [UNGRASP_KETCHUP],
+            PLACE_KETCHUP_OVER_PLATE: [PUT_KETCHUP_IN_TOP_DRAWER, PUT_KETCHUP_ON_BOWL, PUT_KETCHUP_ON_CABINET, GRASP_BOWL, GRASP_TOP_DRAWER],
+            PLACE_KETCHUP_OVER_BOWL: [PUT_KETCHUP_IN_TOP_DRAWER, PUT_KETCHUP_ON_PLATE, PUT_KETCHUP_ON_CABINET, GRASP_BOWL, GRASP_TOP_DRAWER],
+            PLACE_KETCHUP_OVER_TOP_DRAWER: [PUT_KETCHUP_ON_BOWL, PUT_KETCHUP_ON_PLATE, PUT_KETCHUP_ON_CABINET, GRASP_BOWL, GRASP_TOP_DRAWER],
+            PLACE_KETCHUP_OVER_CABINET: [PUT_KETCHUP_ON_BOWL, PUT_KETCHUP_ON_PLATE, PUT_KETCHUP_ON_CABINET, GRASP_BOWL, GRASP_TOP_DRAWER],
 
             "place_cream_cheese_over_plate": [UNGRASP_CREAM_CHEESE],
             "place_cream_cheese_over_bowl": [UNGRASP_CREAM_CHEESE],
             "place_cream_cheese_over_top_drawer": [UNGRASP_CREAM_CHEESE],
             "place_cream_cheese_over_cabinet": [UNGRASP_CREAM_CHEESE],
 
-            PLACE_BOWL_OVER_PLATE: [UNGRASP_BOWL],
-            PLACE_BOWL_OVER_TOP_DRAWER: [UNGRASP_BOWL],
-            PLACE_BOWL_OVER_CABINET: [UNGRASP_BOWL],
+            PLACE_BOWL_OVER_PLATE: [PUT_BOWL_ON_CABINET, PUT_BOWL_IN_TOP_DRAWER, GRASP_KETCHUP, GRASP_TOP_DRAWER],
+            PLACE_BOWL_OVER_TOP_DRAWER: [PUT_BOWL_ON_CABINET, PUT_BOWL_ON_PLATE, GRASP_KETCHUP, GRASP_TOP_DRAWER],
+            PLACE_BOWL_OVER_CABINET: [PUT_BOWL_IN_TOP_DRAWER, PUT_BOWL_ON_PLATE, GRASP_KETCHUP, GRASP_TOP_DRAWER],
 
             # HL task mappings
             PUT_BOWL_IN_TOP_DRAWER: [GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
@@ -257,6 +260,9 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             UNGRASP_KETCHUP: ["ungrasped", "ketchup_1"],
             UNGRASP_CREAM_CHEESE: ["ungrasped", "cream_cheese_1"],
             UNGRASP_TOP_DRAWER: ["ungrasped", "white_cabinet_1_top_region"],
+            UNGRASP_STATE_BOWL: ["ungraspedstate", "akita_black_bowl_1"],
+            UNGRASP_STATE_KETCHUP: ["ungraspedstate", "ketchup_1"],
+
 
             LIFT_BOWL: ["lifted", "akita_black_bowl_1"],
             LIFT_KETCHUP: ["lifted", "ketchup_1"],
@@ -269,7 +275,6 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             PLACE_BOWL_OVER_PLATE: ["over", "akita_black_bowl_1", "plate_1"],
             PLACE_BOWL_OVER_TOP_DRAWER: ["over", "akita_black_bowl_1", "white_cabinet_1_top_region"],
             PLACE_BOWL_OVER_CABINET: ["over", "akita_black_bowl_1", "white_cabinet_1_top_side"],
-
 
             PUT_BOWL_IN_TOP_DRAWER: ["on", "akita_black_bowl_1", "white_cabinet_1_top_region"], 
             "put_bowl_on_top_drawer": ["on", "akita_black_bowl_1", "white_cabinet_1_top_region"], 
