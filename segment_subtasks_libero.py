@@ -96,7 +96,7 @@ standard_to_conj = {
 
 def process_libero(args):
 
-    trajs_per_task = 50
+    trajs_per_task = 100
     resolution = 256
 
     hl_ll_dataset = []
@@ -206,7 +206,7 @@ def process_libero(args):
                 subtask_id = 0
                 
                 if done and len(segments) >= per_task_subgoal_states:
-                    
+                    demos_collected_for_task += 1
                     print(f"Saving trajectory {traj_id}. Noop actions skipped: {num_noops}")
                     counts_per_task[task.name] += 1
                     last_tstep = segments[-1][2]
@@ -255,7 +255,9 @@ def process_libero(args):
                     print("Skipping the demonstration, not enough subtasks completed")
                 elif not done:
                     print("Skipping the demonstration, task not completed")
-
+                print(f"Demos collected so far: {demos_collected_for_task}")
+                if demos_collected_for_task >= 50:
+                    break
                 #if args.video_store_path:
                     #video_writer = imageio.get_writer(args.video_store_path + \
                     #        f"/instr_{standard_to_low[task.language][seg_id]}_traj_{traj_id}_seg_{subtask_id}.mp4", fps=60)
