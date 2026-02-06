@@ -98,7 +98,7 @@
   (:subgoal_instructions
     (:subgoal_instruction grasp the black bowl)
     (:subgoal_instruction lift the grasped object)
-    (:subgoal_instruction place the object over the top drawer of the cabinet)
+    (:subgoal_instruction place the grasped object over the top drawer of the cabinet)
     (:subgoal_instruction ungrasp the object)
   )
 

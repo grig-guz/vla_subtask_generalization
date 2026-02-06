@@ -20,6 +20,10 @@ VALIDATE_PREDICATE_FN_DICT = {
     "grasped": Grasped(),
     "ungrasped": Ungrasped(),
     "ungraspedstate": UngraspedState(),
+    "rotatedleftlow": RotatedLeftLow(),
+    "rotatedrightlow": RotatedRightLow(),
+    "rotatedlefthigh": RotatedLeftHigh(),
+    "rotatedrighthigh": RotatedRightHigh(),
     "lifted": Up(),
     "over": Over()
 }

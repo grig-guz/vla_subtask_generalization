@@ -20,6 +20,20 @@ LIFT_BOWL = "lift_bowl"
 LIFT_KETCHUP = "lift_ketchup"
 LIFT_CREAM_CHEESE = "lift_cream_cheese"
 
+ROTATED_HIGH_LEFT_KETCHUP = "rotated_high_left_ketchup"
+ROTATED_HIGH_LEFT_BOWL = "rotated_high_left_bowl"
+
+ROTATED_LOW_LEFT_KETCHUP = "rotated_low_left_ketchup"
+ROTATED_LOW_LEFT_BOWL = "rotated_low_left_bowl"
+
+
+ROTATED_HIGH_RIGHT_KETCHUP = "rotated_high_right_ketchup"
+ROTATED_HIGH_RIGHT_BOWL = "rotated_high_right_bowl"
+
+ROTATED_LOW_RIGHT_KETCHUP = "rotated_low_right_ketchup"
+ROTATED_LOW_RIGHT_BOWL = "rotated_low_right_bowl"
+
+
 CLOSE_LOW_TOP_DRAWER = "close_low_top_drawer"
 OPEN_LOW_TOP_DRAWER = "open_low_top_drawer"
 CLOSE_HIGH_TOP_DRAWER = "close_high_top_drawer"
@@ -116,19 +130,29 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             LIFT_KETCHUP: "lift the grasped object",
             CLOSE_LOW_TOP_DRAWER: "push the drawer in",
             OPEN_LOW_TOP_DRAWER: "pull the drawer out",
+            ROTATED_LOW_LEFT_BOWL: "rotate the grasped object 60 degrees to the left",
+            ROTATED_LOW_LEFT_KETCHUP: "rotate the grasped object 60 degrees to the left",
+            ROTATED_LOW_RIGHT_BOWL: "rotate the grasped object 60 degrees to the right",
+            ROTATED_LOW_RIGHT_KETCHUP: "rotate the grasped object 60 degrees to the right",
+
+            ROTATED_HIGH_LEFT_BOWL: "rotate the black bowl 60 degrees to the left",
+            ROTATED_HIGH_LEFT_KETCHUP: "rotate the ketchup 60 degrees to the left",
+            ROTATED_HIGH_RIGHT_BOWL: "rotate the black bowl 60 degrees to the right",
+            ROTATED_HIGH_RIGHT_KETCHUP: "rotate the ketchup 60 degrees to the right",
+
 
             UNGRASP_TOP_DRAWER: "ungrasp the object",
             UNGRASP_BOWL: "ungrasp the object",
             UNGRASP_KETCHUP: "ungrasp the object",
 
-            PLACE_KETCHUP_OVER_PLATE: "place the object over the plate",
-            PLACE_KETCHUP_OVER_BOWL: "place the object over the black bowl",
-            PLACE_KETCHUP_OVER_CABINET: "place the object over the top of the cabinet",
-            PLACE_KETCHUP_OVER_TOP_DRAWER: "place the object over the top drawer of the cabinet",
+            PLACE_KETCHUP_OVER_PLATE: "place the grasped object over the plate",
+            PLACE_KETCHUP_OVER_BOWL: "place the grasped object over the black bowl",
+            PLACE_KETCHUP_OVER_CABINET: "place the grasped object over the top of the cabinet",
+            PLACE_KETCHUP_OVER_TOP_DRAWER: "place the grasped object over the top drawer of the cabinet",
 
-            PLACE_BOWL_OVER_PLATE: "place the object over the plate",
-            PLACE_BOWL_OVER_CABINET: "place the object over the top of the cabinet",
-            PLACE_BOWL_OVER_TOP_DRAWER: "place the object over the top drawer of the cabinet",
+            PLACE_BOWL_OVER_PLATE: "place the grasped object over the plate",
+            PLACE_BOWL_OVER_CABINET: "place the grasped object over the top of the cabinet",
+            PLACE_BOWL_OVER_TOP_DRAWER: "place the grasped object over the top drawer of the cabinet",
             
 
             PUT_BOWL_IN_TOP_DRAWER: "put the black bowl in the top drawer of the cabinet", 
@@ -152,20 +176,29 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
         self.task_to_inadm = {
             # LL task mappings
             GRASP_BOWL: [GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, GRASP_CREAM_CHEESE],
-            GRASP_KETCHUP: [GRASP_CREAM_CHEESE, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER, GRASP_CREAM_CHEESE],
+            GRASP_KETCHUP: [GRASP_CREAM_CHEESE, GRASP_BOWL, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER],
+            
             GRASP_CREAM_CHEESE: [GRASP_BOWL, GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER],
-            UNGRASP_BOWL: [],
-            UNGRASP_KETCHUP: [],
+            UNGRASP_BOWL: [LIFT_BOWL],
+            UNGRASP_KETCHUP: [LIFT_KETCHUP],
             UNGRASP_CREAM_CHEESE: [],
+            ROTATED_LOW_LEFT_KETCHUP: [UNGRASP_KETCHUP, ROTATED_LOW_RIGHT_KETCHUP],
+            ROTATED_LOW_RIGHT_KETCHUP: [UNGRASP_KETCHUP, ROTATED_LOW_LEFT_KETCHUP],
+            ROTATED_LOW_LEFT_BOWL: [UNGRASP_BOWL, ROTATED_LOW_RIGHT_BOWL],
+            ROTATED_LOW_RIGHT_BOWL: [UNGRASP_BOWL, ROTATED_LOW_LEFT_BOWL],
 
-            GRASP_TOP_DRAWER: [GRASP_CREAM_CHEESE, GRASP_KETCHUP, GRASP_BOWL,  OPEN_LOW_TOP_DRAWER, CLOSE_LOW_TOP_DRAWER],
+            ROTATED_HIGH_LEFT_BOWL: [],
+            ROTATED_HIGH_RIGHT_BOWL: [],
+            ROTATED_HIGH_LEFT_KETCHUP: [],
+            ROTATED_HIGH_RIGHT_KETCHUP: [],
+
+            GRASP_TOP_DRAWER: [GRASP_CREAM_CHEESE, GRASP_KETCHUP, GRASP_BOWL, OPEN_LOW_TOP_DRAWER, CLOSE_LOW_TOP_DRAWER],
             UNGRASP_TOP_DRAWER: [OPEN_LOW_TOP_DRAWER, CLOSE_LOW_TOP_DRAWER],
             
             CLOSE_STATE_TOP_DRAWER: [],
             OPEN_STATE_TOP_DRAWER: [],
             CLOSE_LOW_TOP_DRAWER: [OPEN_LOW_TOP_DRAWER, GRASP_KETCHUP, GRASP_BOWL],
             OPEN_LOW_TOP_DRAWER: [CLOSE_LOW_TOP_DRAWER, GRASP_KETCHUP, GRASP_BOWL],
-
             CLOSE_HIGH_TOP_DRAWER: [GRASP_CREAM_CHEESE, GRASP_KETCHUP, GRASP_BOWL],
             OPEN_HIGH_TOP_DRAWER: [GRASP_CREAM_CHEESE, GRASP_KETCHUP, GRASP_BOWL],
 
@@ -185,7 +218,7 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             PLACE_BOWL_OVER_PLATE: [PUT_BOWL_ON_CABINET, PUT_BOWL_IN_TOP_DRAWER, GRASP_KETCHUP, GRASP_TOP_DRAWER],
             PLACE_BOWL_OVER_TOP_DRAWER: [PUT_BOWL_ON_CABINET, PUT_BOWL_ON_PLATE, GRASP_KETCHUP, GRASP_TOP_DRAWER],
             PLACE_BOWL_OVER_CABINET: [PUT_BOWL_IN_TOP_DRAWER, PUT_BOWL_ON_PLATE, GRASP_KETCHUP, GRASP_TOP_DRAWER],
-
+        
             # HL task mappings
             PUT_BOWL_IN_TOP_DRAWER: [GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
             "put_bowl_on_top_drawer": [GRASP_KETCHUP, CLOSE_LOW_TOP_DRAWER, OPEN_LOW_TOP_DRAWER,], 
@@ -219,12 +252,22 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
 
             "put_cream_cheese_in_basket_2": [GRASP_ALPHABET_SOUP, GRASP_TOMATO_SAUCE, GRASP_KETCHUP, GRASP_MILK, GRASP_ORANGE_JUICE, GRASP_BUTTER],
             "put_butter_in_basket_2": [GRASP_CREAM_CHEESE, GRASP_ALPHABET_SOUP, GRASP_TOMATO_SAUCE, GRASP_KETCHUP, GRASP_MILK, GRASP_ORANGE_JUICE],
-
         }
 
         self.task_to_predicate = {
             CLOSE_STATE_TOP_DRAWER: ["close", "white_cabinet_1_top_region"],
             OPEN_STATE_TOP_DRAWER: ["open", "white_cabinet_1_top_region"],
+
+            ROTATED_LOW_RIGHT_KETCHUP: ["rotatedrightlow", "ketchup_1"],
+            ROTATED_LOW_LEFT_KETCHUP: ["rotatedleftlow", "ketchup_1"],
+            ROTATED_LOW_LEFT_BOWL: ["rotatedleftlow", "akita_black_bowl_1"],
+            ROTATED_LOW_RIGHT_BOWL: ["rotatedrightlow", "akita_black_bowl_1"],
+
+            ROTATED_HIGH_RIGHT_KETCHUP: ["rotatedrighthigh", "ketchup_1"],
+            ROTATED_HIGH_LEFT_KETCHUP: ["rotatedlefthigh", "ketchup_1"],
+            ROTATED_HIGH_LEFT_BOWL: ["rotatedlefthigh", "akita_black_bowl_1"],
+            ROTATED_HIGH_RIGHT_BOWL: ["rotatedrighthigh", "akita_black_bowl_1"],
+
 
             CLOSE_LOW_TOP_DRAWER: ["closelow", "white_cabinet_1_top_region"],
             OPEN_LOW_TOP_DRAWER: ["openlow", "white_cabinet_1_top_region"],
@@ -340,6 +383,34 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                 return GRASP_STOVE
             else:
                 raise Exception(f"Grasping unknown object: {predicate[1]}")
+        elif predicate[0] == "rotatedleftlow":
+            if predicate[1] == "ketchup_1":
+                return ROTATED_LOW_LEFT_KETCHUP
+            elif predicate[1] == "akita_black_bowl_1":
+                return ROTATED_LOW_LEFT_BOWL
+            else:
+                raise Exception(f"Rotating left unknown object: {predicate[1]}")
+        elif predicate[0] == "rotatedrightlow":
+            if predicate[1] == "ketchup_1":
+                return ROTATED_LOW_RIGHT_KETCHUP
+            elif predicate[1] == "akita_black_bowl_1":
+                return ROTATED_LOW_RIGHT_BOWL
+            else:
+                raise Exception(f"Rotating right unknown object: {predicate[1]}")
+        elif predicate[0] == "rotatedlefthigh":
+            if predicate[1] == "ketchup_1":
+                return ROTATED_HIGH_LEFT_KETCHUP
+            elif predicate[1] == "akita_black_bowl_1":
+                return ROTATED_HIGH_LEFT_BOWL
+            else:
+                raise Exception(f"Rotating left unknown object: {predicate[1]}")
+        elif predicate[0] == "rotatedrighthigh":
+            if predicate[1] == "ketchup_1":
+                return ROTATED_HIGH_RIGHT_KETCHUP
+            elif predicate[1] == "akita_black_bowl_1":
+                return ROTATED_HIGH_RIGHT_BOWL
+            else:
+                raise Exception(f"Rotating right unknown object: {predicate[1]}")
         elif predicate[0] == "ungrasped":
             if predicate[1] == "akita_black_bowl_1":
                 return UNGRASP_BOWL
@@ -651,8 +722,12 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
                 all_subgoals_done = self.all_subgoals_completed()
                 if not all_subgoals_done:
                     obs['subgoal_language'] = self.parsed_problem['subgoal_instructions'][self.current_subgoal_idx]
-
-            return obs, reward, done and all_subgoals_done, info
+            
+            prob = self.parsed_problem["goal_state"]
+            if 'rotate' in prob and all_subgoals_done:
+                return obs, reward, all_subgoals_done, info
+            else:
+                return obs, reward, done and all_subgoals_done, info
 
 
     def update_init_obj_poses(self):

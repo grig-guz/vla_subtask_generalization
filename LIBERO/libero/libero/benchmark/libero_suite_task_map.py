@@ -9,6 +9,10 @@ libero_task_map = {
         "KITCHEN_SCENE5_put_the_ketchup_on_the_bowl",
         "KITCHEN_SCENE5_put_the_ketchup_on_the_plate",
         "KITCHEN_SCENE5_put_the_ketchup_on_top_of_the_cabinet",
+        "KITCHEN_SCENE5_rotate_ketchup_right",
+        "KITCHEN_SCENE5_rotate_ketchup_left",
+        "KITCHEN_SCENE5_rotate_black_bowl_right",
+        "KITCHEN_SCENE5_rotate_black_bowl_left",
     ],
     "libero_high_level_hard": [
         "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_frying_pan_on_it",

@@ -105,10 +105,11 @@ def collect_human_trajectory(
         # Also break if we complete the task
         if task_completion_hold_count == 0:
             break
+        
 
         # state machine to check for having a success for 10 consecutive timesteps
         #print(env._check_success(), env.all_subgoals_completed())
-        if env._check_success() and env.all_subgoals_completed():
+        if env.all_subgoals_completed() and (env._check_success() or 'rotate' in env.env.env.parsed_problem['goal_state'][0][0]):
             if task_completion_hold_count > 0:
                 task_completion_hold_count -= 1  # latched state, decrement count
                 print("Completion count dec!")
