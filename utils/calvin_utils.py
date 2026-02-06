@@ -82,11 +82,11 @@ def get_libero_env(task, resolution=256):
     from libero.libero import get_libero_path
 
     """Initializes and returns the LIBERO environment, along with the task description."""
-    task_description = task.language
     task_bddl_file = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
     env_args = {"bddl_file_name": task_bddl_file, "camera_heights": resolution, "camera_widths": resolution}
     env = OffScreenRenderEnv(**env_args)
     env.seed(0)  # IMPORTANT: seed seems to affect object positions even when using fixed initial state
+    task_description = " ".join(env.env.parsed_problem["language_instruction"])
     return env, task_description
 
 

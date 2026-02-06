@@ -18,7 +18,7 @@ from libero.libero.envs.bddl_base_domain import TASK_MAPPING
 task_ids_per_suite = {
     #'libero_10': [9, 0, 1, 2, 7],
     #'libero_90': [21],
-    'libero_single': [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    'libero_single': [12, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8]
 }
 
 standard_to_low = {
@@ -101,7 +101,6 @@ def process_libero(args):
 
     hl_ll_dataset = []
 
-    datasets_default_path = get_libero_path("datasets")
 
     counts_per_task = defaultdict(int)
 
@@ -218,7 +217,7 @@ def process_libero(args):
                         'states': env_states[:last_tstep],
                         'actions': actions[:last_tstep],
                         'robot_states': robot_states[:last_tstep],
-                        'hl_instruction': task.language, #standard_to_high[task.language],
+                        'hl_instruction': " ".join(env.env.parsed_problem['language_instruction']), #standard_to_high[task.language],
                         'conj_instruction': ", then ".join(subgoal_instructions), #standard_to_conj[task.language],
                         'll_segments': [],
                         'll_instructions': []
@@ -250,6 +249,10 @@ def process_libero(args):
                             #video_writer.close()
 
                         subtask_id += 1
+                    print(f"Added HL instruction: {hl_ll_traj['hl_instruction']}" )
+                    print(f"Added Conj instruction: {hl_ll_traj['conj_instruction']}" )
+                    print(f"Added LL instructions: {hl_ll_traj['ll_instructions']}" )
+
                     hl_ll_dataset.append(hl_ll_traj)
                 elif len(segments) < per_task_subgoal_states:
                     print("Skipping the demonstration, not enough subtasks completed")

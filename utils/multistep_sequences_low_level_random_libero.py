@@ -259,6 +259,29 @@ class LiftGraspedObj(LiberoTask):
     def __str__(self):
         return "lift_" + self.target_obj
 
+class RotateGraspedObj(LiberoTask):
+
+    def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
+        super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
+        # Just go over state, check if a block is grasped, then check if it is lifted.
+        # That's it.
+        if not self.target_obj:
+            self.target_obj = np.random.choice(self.all_rigid_objs, size=1)[0]
+        self.direction = np.random.choice(["left", "right"], size=1)[0]
+
+
+    def check_preconditions(self, state):
+        if state['grasped'] == self.target_obj:
+            return True
+        return False
+    
+    def update_state(self, state):
+        state[self.target_obj + "_lifted"] = 1
+        return state
+            
+    def __str__(self):
+        return "rotated_low_" + self.direction + "_" + self.target_obj
+
 
 class MoveDrawer(LiberoTask):
 
@@ -294,7 +317,7 @@ def get_sequences_for_state2(args):
     seq_len = 5
     results = []
     # PlaceGraspedBlockOver for task diversity
-    all_tasks = [GraspRigid, GraspRigid, GraspArticulated, Ungrasp, Ungrasp, PlaceGraspedObjOver, PlaceGraspedObjOver, LiftGraspedObj, LiftGraspedObj, MoveDrawer, MoveDrawer]
+    all_tasks = [GraspRigid, GraspRigid, GraspArticulated, RotateGraspedObj, Ungrasp, Ungrasp, PlaceGraspedObjOver, PlaceGraspedObjOver, PlaceGraspedObjOver, PlaceGraspedObjOver, PlaceGraspedObjOver, LiftGraspedObj, MoveDrawer, MoveDrawer]
     all_rigid_objs = ["bowl", "ketchup"]
     all_articulated_objects = ["top_drawer"]#, "middle_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
@@ -411,9 +434,9 @@ def store_sequences_init_states(store_path, results):
 
 if __name__ == "__main__":
     print("getting sequences")
-    results = get_low_level_random_sequences(1000)
+    results = get_low_level_random_sequences(1050)
     store_path = "utils/libero_low_sequences_init_states"
-    store_sequences_init_states(store_path, results)
+    #store_sequences_init_states(store_path, results)
 
     high_level_counter = Counter()
     low_level_counter = Counter()

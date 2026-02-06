@@ -124,6 +124,29 @@ class PickPlaceObj(LiberoTask):
         else:
             return "put_" + self.target_obj +  "_on_" + self.target_loc
 
+class RotateObj(LiberoTask):
+
+    def __init__(self, target_obj=None, target_loc=None, all_rigid_objs=[], all_art_objs=[], all_objs=[], all_locations=[]):
+        super().__init__(target_obj, target_loc, all_rigid_objs, all_art_objs, all_objs, all_locations)
+        if not self.target_obj:
+            self.target_obj = np.random.choice(self.all_rigid_objs, size=1)[0]
+
+        self.direction = np.random.choice(["left", "right"], size=1)[0]
+        
+    def check_preconditions(self, state):
+        if state[self.target_obj] == "top_drawer":
+            return False
+        if all([state[obj] != self.target_obj for obj in self.all_rigid_objs]):
+            return True
+        return False
+
+    def update_state(self, state):
+        state[self.target_obj] = self.target_loc
+        return state
+
+    def __str__(self):
+        return "rotated_high_" + self.target_obj + "_" + self.direction
+
 
 class OpenCloseDrawer(LiberoTask):
 
@@ -266,10 +289,10 @@ def store_sequences_init_states(store_path, results):
 if __name__ == "__main__":
     save_sequences = False
     print("getting sequences")
-    results = get_hl_random_sequences(1000)
+    results = get_hl_random_sequences(1050)
     store_path = "utils/libero_high_sequences_init_states"
 
-    store_sequences_init_states(store_path, results)
+    #store_sequences_init_states(store_path, results)
 
     high_level_counter = Counter()
     low_level_counter = Counter()
