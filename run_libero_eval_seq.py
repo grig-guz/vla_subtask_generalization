@@ -39,7 +39,7 @@ class GenerateConfig:
     num_videos: int = 0
     num_steps_wait: int = 10                         # Number of steps to wait for objects to stabilize in sim
     eval_type: str = ""
-    ep_len: int = 500
+    ep_len: int = 350
     #################################################################################################################
     # CALVIN environment-specific parameters
     #################################################################################################################

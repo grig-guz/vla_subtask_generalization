@@ -32,7 +32,7 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
         cfg.video_save_dir = ''
         cfg.num_steps_wait = 10
         cfg.model = model_name
-        cfg.ep_len = 500
+        cfg.ep_len = 350
         cfg.action_horizon = 10
 
         if "conj" in eval_type or "high" in eval_type:
