@@ -669,10 +669,6 @@ class BDDLSequentialBaseDomain(BDDLBaseDomain):
             inadm_tasks = [GRASP_PORCELAIN_MUG, GRASP_YELLOW_WHITE_MUG]
         elif "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave" in self.bddl_file_name:
             inadm_tasks = [GRASP_PORCELAIN_MUG, CLOSE_MICROWAVE]
-        elif "KITCHEN_SCENE8_put_the_left_moka_pot_on_the_stove" in self.bddl_file_name:
-            inadm_tasks = [GRASP_MOKA_POT]
-        elif "KITCHEN_SCENE8_put_the_right_moka_pot_on_the_stove" in self.bddl_file_name:
-            inadm_tasks = [GRASP_LEFT_MOKA_POT]
         elif "LIVING_ROOM_SCENE1_pick_up_the_alphabet_soup_and_put_it_in_the_basket" in self.bddl_file_name:
             inadm_tasks = [GRASP_TOMATO_SAUCE, GRASP_CREAM_CHEESE, GRASP_KETCHUP, GRASP_MILK, GRASP_ORANGE_JUICE, GRASP_BUTTER]
         elif "LIVING_ROOM_SCENE1_pick_up_the_cream_cheese_box_and_put_it_in_the_basket" in self.bddl_file_name:
