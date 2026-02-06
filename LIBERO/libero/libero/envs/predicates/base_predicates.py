@@ -142,6 +142,23 @@ class CloseLow(UnaryAtomic):
     def __call__(self, arg):
         return arg.is_close_low()
 
+class RotatedLeftLow(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.check_rotated_left()
+
+class RotatedRightLow(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.check_rotated_right()
+
+
+class RotatedLeftHigh(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.check_rotated_left() and arg.check_ungrasped_state()
+
+class RotatedRightHigh(UnaryAtomic):
+    def __call__(self, arg):
+        return arg.check_rotated_right() and arg.check_ungrasped_state()
+
 
 class TurnOn(UnaryAtomic):
     def __call__(self, arg):

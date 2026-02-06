@@ -1,6 +1,6 @@
 (define (problem LIBERO_Sequential_Kitchen_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language put the ketchup on the bowl)
+  (:language rotate the black bowl 60 degrees to the left)
     (:regions
       (white_cabinet_init_region
           (:target kitchen_table)
@@ -84,21 +84,20 @@
   )
 
   (:goal
-    (And (On ketchup_1 akita_black_bowl_1))
+    (And (RotatedLeftHigh akita_black_bowl_1))
   )
 
   (:subgoals
-    (And (Grasped ketchup_1))
-    (And (Lifted ketchup_1))
-    (And (Over ketchup_1 akita_black_bowl_1))
-    (And (Ungrasped ketchup_1))
+    (And (Grasped akita_black_bowl_1))
+    (And (RotatedLeftLow akita_black_bowl_1))
+    (And (Ungrasped akita_black_bowl_1))
   )
 
   (:subgoal_instructions
-    (:subgoal_instruction grasp the ketchup)
-    (:subgoal_instruction lift the grasped object)
-    (:subgoal_instruction place the grasped object over the black bowl)
+    (:subgoal_instruction grasp the black bowl)
+    (:subgoal_instruction rotate the grasped object 60 degrees to the left)
     (:subgoal_instruction ungrasp the object)
   )
+
 
 )

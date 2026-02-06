@@ -50,10 +50,15 @@ class ObjectState(BaseObjectState):
         self.subtask_init_pos = None
         self.is_grasped_init = None
         self.is_turned_on_init = None
+        self.R0 = None
 
     def set_init_pos(self):
         object_pos = self.env.sim.data.body_xpos[self.env.obj_body_id[self.object_name]]
         self.subtask_init_pos = np.copy(object_pos)
+        initial_angle = self.env.sim.data.body_xmat[
+            self.env.obj_body_id[self.object_name]
+        ].reshape(3,3)
+        self.R0 = np.copy(initial_angle)
         self.is_grasped_init = self.check_grasped_state()
         if self.has_turnon_affordance:
             self.is_turned_on_init = self.turn_on_state()
@@ -233,6 +238,38 @@ class ObjectState(BaseObjectState):
         if self.has_turnon_affordance:
             self.turn_on()
 
+
+    def check_rotated_left(self, angle_threshold=60):
+        if self.R0 is None:
+            return False
+        
+        R = self.env.sim.data.body_xmat[
+            self.env.obj_body_id[self.object_name]
+        ].reshape(3,3)
+
+        yaw = np.arctan2(R[1, 0], R[0, 0])
+        yaw0 = np.arctan2(self.R0[1, 0], self.R0[0, 0])
+        delta_yaw = (yaw - yaw0 + np.pi) % (2*np.pi) - np.pi
+        # Check if the object is rotated more than the threshold angle from its initial orientation
+          # Assuming initial orientation is the same as current orientation at the start
+        THRESH = np.deg2rad(angle_threshold)
+        return delta_yaw >= THRESH
+
+    def check_rotated_right(self, angle_threshold=60):
+        if self.R0 is None:
+            return False
+        
+        R = self.env.sim.data.body_xmat[
+            self.env.obj_body_id[self.object_name]
+        ].reshape(3,3)
+
+        yaw = np.arctan2(R[1, 0], R[0, 0])
+        yaw0 = np.arctan2(self.R0[1, 0], self.R0[0, 0])
+        delta_yaw = (yaw - yaw0 + np.pi) % (2*np.pi) - np.pi
+        # Check if the object is rotated more than the threshold angle from its initial orientation
+          # Assuming initial orientation is the same as current orientation at the start
+        THRESH = np.deg2rad(angle_threshold)
+        return delta_yaw <= -THRESH
 
 
 class SiteObjectState(BaseObjectState):
