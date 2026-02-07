@@ -27,7 +27,7 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
         from run_libero_eval_seq import evaluate_libero_policy_seq, GenerateConfig
         cfg = GenerateConfig()
         cfg.num_sequences = 50
-        cfg.eval_type = eval_type
+        cfg.eval_type = 'train_' + eval_type
         cfg.num_videos = 0
         cfg.video_save_dir = ''
         cfg.num_steps_wait = 10

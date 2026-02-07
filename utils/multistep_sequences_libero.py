@@ -145,7 +145,7 @@ class RotateObj(LiberoTask):
         return state
 
     def __str__(self):
-        return "rotated_high_" + self.target_obj + "_" + self.direction
+        return "rotated_high_" + self.direction + "_" + self.target_obj
 
 
 class OpenCloseDrawer(LiberoTask):
@@ -182,7 +182,7 @@ def get_sequences_for_state2(args):
     seq_len = 5
     results = []
     
-    all_tasks = [PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, OpenCloseDrawer, OpenCloseDrawer]
+    all_tasks = [PickPlaceObj, PickPlaceObj, PickPlaceObj, PickPlaceObj, RotateObj, OpenCloseDrawer, OpenCloseDrawer]
     all_rigid_objs = ["bowl", "ketchup"]
     all_articulated_objects = ["top_drawer"]
     all_objects = all_rigid_objs + all_articulated_objects
@@ -271,7 +271,7 @@ def store_sequences_init_states(store_path, results):
 
     
     results_states = []    
-    for initial_state, sub, seq in results:
+    for initial_state, sub, seq in tqdm(results):
 
         if initial_state["top_drawer"] == "open":
             env = env_drawer_open
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     results = get_hl_random_sequences(1050)
     store_path = "utils/libero_high_sequences_init_states"
 
-    #store_sequences_init_states(store_path, results)
+    store_sequences_init_states(store_path, results)
 
     high_level_counter = Counter()
     low_level_counter = Counter()

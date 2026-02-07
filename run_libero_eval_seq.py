@@ -35,7 +35,7 @@ class GenerateConfig:
     #################################################################################################################
     model: str = "octo"                    # Model family
     pretrained_checkpoint: Union[str, Path] = ""     # Pretrained checkpoint path
-    num_sequences: int = 1000
+    num_sequences: int = 1050
     num_videos: int = 0
     num_steps_wait: int = 10                         # Number of steps to wait for objects to stabilize in sim
     eval_type: str = ""
@@ -117,8 +117,11 @@ def evaluate_libero_policy_seq(cfg, model, processors, eval_sequences, counters)
         rollout_video = None
 
     results = []
-    if cfg.num_sequences < len(eval_sequences):
+    if 'train' in cfg.eval_type:
         eval_sequences = eval_sequences[:cfg.num_sequences]
+    else:
+        eval_sequences = eval_sequences[50:]
+
         #eval_sequences = eval_sequences[14:15]
 
 
@@ -205,7 +208,7 @@ def evaluate_sequence(
     for subtask in eval_sequence:
         env.env.parsed_problem["goal_state"] = [env.env.task_to_predicate[subtask]]
         
-        if cfg.eval_type in ['libero_conj_single']:
+        if cfg.eval_type in ['libero_conj_single', 'train_libero_conj_single']:
             lang_annotation = ", then ".join([env.env.task_to_lang[low_subtask] for low_subtask in env.env.task_to_subtasks[subtask]])
             print(lang_annotation)
         else:
@@ -300,7 +303,7 @@ def rollout(observations, task, lang_annotation, cfg, model, processors, env, re
             rollout_video.update(frame_aug.unsqueeze(0).unsqueeze(0), step=step)
 
         # check if current step solves a task
-        if cfg.eval_type not in ['libero_low_level_single_easy'] and not info["hard_eval_passed"]:
+        if cfg.eval_type not in ['libero_low_level_single_easy'] and ('train' not in cfg.eval_type) and not info["hard_eval_passed"]:
             wrong_tasks = info["inadmissible_task"]
             print("HARD EVAL FAILURE!", info["hard_eval_passed"], info["inadmissible_task"])
             log_run_result(counters, task, lang_annotation, wrong_tasks, record, rollout_video)

@@ -20,8 +20,6 @@ libero_task_map = {
         "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
         "LIVING_ROOM_SCENE2_put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
         "LIVING_ROOM_SCENE1_put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-        
-        "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove",
         "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it"
     ],
     "libero_conj_hard": [
@@ -30,7 +28,6 @@ libero_task_map = {
         "LIVING_ROOM_SCENE2_put_both_the_alphabet_soup_and_the_tomato_sauce_in_the_basket",
         "LIVING_ROOM_SCENE2_put_both_the_cream_cheese_box_and_the_butter_in_the_basket",
         "LIVING_ROOM_SCENE1_put_both_the_alphabet_soup_and_the_cream_cheese_box_in_the_basket",
-        "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove",
         "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it"
     ],
     "libero_low_level": [
@@ -45,9 +42,6 @@ libero_task_map = {
 
         "LIVING_ROOM_SCENE1_pick_up_the_alphabet_soup_and_put_it_in_the_basket",
         "LIVING_ROOM_SCENE1_pick_up_the_cream_cheese_box_and_put_it_in_the_basket",
-
-        "KITCHEN_SCENE8_put_the_right_moka_pot_on_the_stove",
-        "KITCHEN_SCENE8_put_the_left_moka_pot_on_the_stove",
 
         "KITCHEN_SCENE6_close_the_microwave",
         "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave"
@@ -64,9 +58,6 @@ libero_task_map = {
 
         "LIVING_ROOM_SCENE1_pick_up_the_alphabet_soup_and_put_it_in_the_basket",
         "LIVING_ROOM_SCENE1_pick_up_the_cream_cheese_box_and_put_it_in_the_basket",
-
-        "KITCHEN_SCENE8_put_the_right_moka_pot_on_the_stove",
-        "KITCHEN_SCENE8_put_the_left_moka_pot_on_the_stove",
 
         "KITCHEN_SCENE6_close_the_microwave",
         "KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave"

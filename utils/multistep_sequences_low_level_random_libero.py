@@ -14,6 +14,7 @@ import numpy as np
 from utils.shared_utils import temp_seed
 from random import sample
 import time
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -414,7 +415,7 @@ def store_sequences_init_states(store_path, results):
     env_drawer_closed.seed(0)
 
     results_states = []    
-    for initial_state, sub, seq in results:
+    for initial_state, sub, seq in tqdm(results):
 
         if initial_state["top_drawer"] == "open":
             env = env_drawer_open
@@ -436,7 +437,7 @@ if __name__ == "__main__":
     print("getting sequences")
     results = get_low_level_random_sequences(1050)
     store_path = "utils/libero_low_sequences_init_states"
-    #store_sequences_init_states(store_path, results)
+    store_sequences_init_states(store_path, results)
 
     high_level_counter = Counter()
     low_level_counter = Counter()
