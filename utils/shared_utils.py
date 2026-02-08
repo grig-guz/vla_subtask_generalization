@@ -57,7 +57,7 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
         from run_libero_eval import evaluate_libero_policy
 
         if 'low_level' in eval_type:
-            eval_type_libero = "libero_low_level_hard"
+            eval_type_libero = "libero_low_level"
         elif 'conj' in eval_type:
             eval_type_libero = "libero_conj_hard"
         else:
@@ -71,7 +71,8 @@ def run_validation(policy, eval_type, model_name, global_step, processors=None, 
             policy=policy,
             processors=processors,
             num_steps_wait=10,
-            timestep=global_step
+            timestep=global_step,
+            is_validation=True
         )
     else:
         from run_calvin_eval import evaluate_policy

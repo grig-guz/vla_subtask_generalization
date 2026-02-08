@@ -89,7 +89,7 @@ def save_rollout_video(video_save_dir, rollout_images, idx, success, task_descri
         return mp4_path
 
 
-def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, action_horizon, policy, processors=None, num_steps_wait=10, timestep=-1, video_save_dir=None):
+def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, action_horizon, policy, processors=None, num_steps_wait=10, timestep=-1, video_save_dir=None, is_validation=False):
     from libero.libero import benchmark
 
     benchmark_dict = benchmark.get_benchmark_dict()
@@ -110,8 +110,8 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
 
         # Initialize LIBERO environment and task description
         env, lang_annotation = get_libero_env(task, resolution=256)
-
-        env.env.set_seq_evaluation(False)
+        if 'hard' in task_suite_name:
+            env.env.set_seq_evaluation(False)
 
         if model_name == 'octo':
             goal = policy.create_tasks(texts=[lang_annotation])
@@ -245,7 +245,7 @@ def evaluate_libero_policy(task_suite_name, num_trials_per_task, model_name, act
                 past_obs = obs
                 obs, reward, done, info = env.step(action.tolist())
 
-                if 'hard' in task_suite_name and 'hard_eval_passed' in info and not info['hard_eval_passed']:
+                if not is_validation and 'hard' in task_suite_name and 'hard_eval_passed' in info and not info['hard_eval_passed']:
                     failure_dict[lang_annotation].append(info["inadmissible_task"])
                     break
 
